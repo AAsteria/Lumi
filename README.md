@@ -1,8 +1,8 @@
 # Lumi
 The Lumi Programming Language <br/>
 
-A functional programming language based on λ-calculus for scientific research.
-We hope "Lumi" to be an efficient and friendly language to light the way for researchers.
+A functional programming language based on λ-calculus for scientific research. <br/>
+We hope this language to become an efficient and friendly tool to light the way for researchers.
 
 ## Feature (Updating...)
 * Minimal core with packages and macro supplement
