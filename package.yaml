@@ -37,4 +37,6 @@ executables:
     dependencies:
     - time >= 1.8.0
     - optparse-applicative
+    - megaparsec
+    - scientific >= 0.0.0.0
     - ansi-terminal >= 0.11.4

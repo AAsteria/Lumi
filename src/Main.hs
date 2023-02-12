@@ -22,12 +22,10 @@ main = do
     putStrLn ""
     where
         -- Use "./lumi --x" ('lumi' is not a command)
-        optsParser = 
-            info
-                (helper <*> versionOption)
-                fullDesc
+        optsParser = info (helper <*> versionOption) fullDesc
         versionOption :: Parser (a -> a)
         versionOption = infoOption "Version 0.0.1" (long "version" <> help "Show current version")
+        
         -- https://www.fpcomplete.com/haskell/library/optparse-applicative/
         -- programOptions :: Parser Opts
         -- programOptions =
