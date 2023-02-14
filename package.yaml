@@ -22,14 +22,17 @@ dependencies:
 default-extensions: []
   #  - OverloadedStrings
 
-#library:
-#  source-dirs: src
+# library:
+#   source-dirs: src
+#   exposed-modules:
+#   - Lumi.Parser
+#   - Lumi.AST
 
 executables:
   lumi:
     main:                Main.hs
-    source-dirs:
-      - src
+    source-dirs:         
+    - src
     ghc-options:
     - -threaded
     - -rtsopts
@@ -39,4 +42,7 @@ executables:
     - optparse-applicative
     - megaparsec
     - scientific >= 0.0.0.0
+    - unordered-containers >= 0.0.0.0
+    - mtl >= 0.0.0
+    - template-haskell >= 1.14.0.0
     - ansi-terminal >= 0.11.4

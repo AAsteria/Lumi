@@ -1,9 +1,12 @@
+module Parser where
+import AST
+
 import Data.Void (Void)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Scientific
-import Data.Functor
+import Language.Haskell.TH
 
 newtype Identifier = Identifier
     { getId :: String
@@ -19,9 +22,7 @@ data SExp
     | SId      Identifier
     deriving (Show)
 
-type Parser = Parsec
-    Void
-    String
+type Parser = Parsec Void String
 
 bool :: Parser Bool
 bool = label "boolean" $ lexerSpace $ False <$ string "False" <|> True <$ string "True"
@@ -65,7 +66,6 @@ skipSpace = L.space
 lexerSpace :: Parser a -> Parser a
 lexerSpace = L.lexeme skipSpace
 
-
 -- Parser to represent SExp-specific variants
 -- usage: parseTest ssvp " "
 ssvp :: Parser SExp
@@ -77,6 +77,7 @@ ssvp = choice
   ]
 
 -- Parser helper function
+-- usage: case parses "   5.5" of { Left e -> putStrLn e; Right r -> print r }
 parses :: String -> Either String SExp
 parses input =
   let
