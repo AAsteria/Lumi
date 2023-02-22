@@ -11,6 +11,8 @@ import Prelude hiding (lookup)
 import Text.Megaparsec
 import Control.Monad
 import System.Console.Haskeline
+import Language.Haskell.TH.PprLib (space)
+import Text.Megaparsec.Byte (space1)
 
 data Opts = Opts
     { optFlag :: !Bool
@@ -29,28 +31,29 @@ repl :: Env -> IO ()
 repl env = runInputT defaultSettings l
   where l = do p <- getInputLine "lumi> "
                case p of
-                    Nothing -> return ()
-                    Just "exit" -> return ()
-                    Just "quit" -> return ()
+                    Nothing -> pure ()
+                    Just "exit" -> pure ()
+                    Just "quit" -> pure ()
+                    Just "" -> l
                     Just input -> do case parse mmvp "<stdin>" input of
-                                       Right exp -> outputStrLn (show $ eval exp env)
-                                       Left msg -> outputStrLn (show msg)
+                                       Right exp -> outputStrLn (show $ trans $ eval exp env)
+                                       Left err -> outputStrLn (show err)
                                      l
 
 main :: IO ()
 main = do
     banner
-    repl emptyEnv -- TODO: Create lumi command for it
     opts <- execParser optsParser
+    repl emptyEnv -- TODO: Create lumi command for it
     putStrLn ""
     where
-        -- stack build, then use "./lumi --x" ('lumi' is not a command)
+        -- lumi.sh -> run `lumi` in terminal
+        -- export PATH="$HOME/.local/bin:$PATH"
         optsParser = info (helper <*> versionOption) fullDesc
         versionOption :: Options.Applicative.Parser (a -> a)
         versionOption = infoOption "Version 0.0.1" (long "version" <> help "Show current version")
-        
+
         -- https://www.fpcomplete.com/haskell/library/optparse-applicative/
         -- lumiInterpreter: lumi <source file> -args
         -- lumiCompiler: lumi -c <source file> <output file>
         -- and corresponding commands of the 3 options
-

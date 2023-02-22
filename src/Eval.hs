@@ -4,6 +4,7 @@ import Parser
 
 import Text.Megaparsec
 import System.Console.Haskeline
+import Language.Haskell.TH (Exp)
 
 intOps = [ ("+",(+))
          , ("-",(-))
@@ -12,6 +13,8 @@ intOps = [ ("+",(+))
 
 liftIntOp f (IntVal i1) (IntVal i2) = IntVal (f i1 i2)
 liftIntOp f _           _           = IntVal 0
+
+trans (IntVal i) = i
 
 eval :: SExp -> Env -> Val
 eval (SInteger i) _ = IntVal i
