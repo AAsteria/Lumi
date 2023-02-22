@@ -15,6 +15,10 @@ data SExp
     | SId      Identifier
     deriving (Show)
 
+data Val = IntVal Integer
+         | DoubleVal Double
+    deriving (Show)
+
 type Env = [(String, SExp)]
 
 emptyEnv :: Env

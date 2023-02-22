@@ -10,11 +10,11 @@ intOps = [ ("+",(+))
          , ("*",(*))
          , ("/",div)]
 
-liftIntOp f (SInteger i1) (SInteger i2) = SInteger (f i1 i2)
-liftIntOp f _           _           = SInteger 0
+liftIntOp f (IntVal i1) (IntVal i2) = IntVal (f i1 i2)
+liftIntOp f _           _           = IntVal 0
 
-eval :: SExp -> Env -> SExp
-eval (SInteger i) _ = SInteger i
+eval :: SExp -> Env -> Val
+eval (SInteger i) _ = IntVal i
 
 eval (SIntOp op e1 e2) env =
   let v1 = eval e1 env

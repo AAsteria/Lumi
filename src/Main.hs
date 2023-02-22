@@ -8,6 +8,7 @@ import Options.Applicative
 import Data.Semigroup ((<>))
 import System.IO
 import Prelude hiding (lookup)
+import Text.Megaparsec
 import Control.Monad
 import System.Console.Haskeline
 
@@ -26,14 +27,15 @@ banner = do
 -- Lumi Repl
 repl :: Env -> IO ()
 repl env = runInputT defaultSettings l
-    where l = do p <- getInputLine "lumi> "
-                    case p of
-                        Nothing -> return ()
-                        Just "quit" -> return ()
-                        Just input -> do case parses input of
-                                            Right exp -> outputStrLn (show $ eval exp env)
-                                            Left msg -> outputStrLn (show msg)
-                                        l
+  where l = do p <- getInputLine "lumi> "
+               case p of
+                    Nothing -> return ()
+                    Just "exit" -> return ()
+                    Just "quit" -> return ()
+                    Just input -> do case parse mmvp "<stdin>" input of
+                                       Right exp -> outputStrLn (show $ eval exp env)
+                                       Left msg -> outputStrLn (show msg)
+                                     l
 
 main :: IO ()
 main = do

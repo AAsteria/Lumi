@@ -66,24 +66,21 @@ arOperators =
     , C.InfixL (SIntOp "-" <$ symbol "-") ]
   ]
 
-arTerm :: Parser SExp
-arTerm = intExp <|> arExp
+mvp :: Parser SExp
+mvp = intExp <|> mmvp
 
-arExp :: Parser SExp
-arExp = makeExprParser arTerm arOperators
-
-anExp :: Parser SExp
-anExp = arExp
+mmvp :: Parser SExp
+mmvp = makeExprParser mvp arOperators
 
 -- Parser to represent SExp-specific variants
 -- usage: parseTest ssvp " "
+-- TODO: move bool, double, string, identifier to "mvp", make them work!
 ssvp :: Parser SExp
 ssvp = choice
   [ SBool <$> bool
   , SNumeric <$> numeric
   , SString <$> str
   , SId <$> identifier
-  , anExp
   ]
 
 -- Parser helper function
