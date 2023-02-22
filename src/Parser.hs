@@ -7,20 +7,7 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Scientific
 import Language.Haskell.TH
-
-newtype Identifier = Identifier
-    { getId :: String
-    } deriving (Show)
-
-data SExp
-    = SSExp   SExp [SExp]
-    | SInteger Integer
-    | SDouble  Double
-    | SNumeric SExp
-    | SString  String
-    | SBool    Bool
-    | SId      Identifier
-    deriving (Show)
+import Control.Monad.Combinators.Expr as C
 
 type Parser = Parsec Void String
 
@@ -66,6 +53,28 @@ skipSpace = L.space
 lexerSpace :: Parser a -> Parser a
 lexerSpace = L.lexeme skipSpace
 
+intExp = do SInteger <$> integer
+
+symbol :: String -> Parser String
+symbol = L.symbol skipSpace
+
+arOperators :: [[Operator Parser SExp]]
+arOperators =
+  [ [ C.InfixL (SIntOp "*" <$ symbol "*")
+    , C.InfixL (SIntOp "/" <$ symbol "/") ]
+  , [ C.InfixL (SIntOp "+" <$ symbol "+")
+    , C.InfixL (SIntOp "-" <$ symbol "-") ]
+  ]
+
+arTerm :: Parser SExp
+arTerm = intExp <|> arExp
+
+arExp :: Parser SExp
+arExp = makeExprParser arTerm arOperators
+
+anExp :: Parser SExp
+anExp = arExp
+
 -- Parser to represent SExp-specific variants
 -- usage: parseTest ssvp " "
 ssvp :: Parser SExp
@@ -74,6 +83,7 @@ ssvp = choice
   , SNumeric <$> numeric
   , SString <$> str
   , SId <$> identifier
+  , anExp
   ]
 
 -- Parser helper function

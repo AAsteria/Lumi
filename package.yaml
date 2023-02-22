@@ -42,6 +42,8 @@ executables:
     - optparse-applicative
     - megaparsec
     - scientific >= 0.0.0.0
+    - parser-combinators >= 1.0.0
+    - haskeline >= 0.6.0
     - unordered-containers >= 0.0.0.0
     - mtl >= 0.0.0
     - template-haskell >= 1.14.0.0

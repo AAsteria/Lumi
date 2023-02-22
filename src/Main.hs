@@ -1,6 +1,7 @@
 module Main where
 import Parser
 import AST
+import Eval
 
 import System.Console.ANSI
 import Options.Applicative
@@ -8,6 +9,7 @@ import Data.Semigroup ((<>))
 import System.IO
 import Prelude hiding (lookup)
 import Control.Monad
+import System.Console.Haskeline
 
 data Opts = Opts
     { optFlag :: !Bool
@@ -21,10 +23,22 @@ banner = do
     setSGR [SetColor Foreground Dull Green]
     putStrLn ""
 
+-- Lumi Repl
+repl :: Env -> IO ()
+repl env = runInputT defaultSettings l
+    where l = do p <- getInputLine "lumi> "
+                    case p of
+                        Nothing -> return ()
+                        Just "quit" -> return ()
+                        Just input -> do case parses input of
+                                            Right exp -> outputStrLn (show $ eval exp env)
+                                            Left msg -> outputStrLn (show msg)
+                                        l
+
 main :: IO ()
 main = do
     banner
-    -- repl emptyEnv
+    repl emptyEnv -- TODO: Create lumi command for it
     opts <- execParser optsParser
     putStrLn ""
     where

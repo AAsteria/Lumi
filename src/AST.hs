@@ -1,13 +1,24 @@
 module AST where
 
-data Exp = IntExp Integer
-         | IntOpExp String Exp Exp
-    deriving (Show, Eq)
+newtype Identifier = Identifier
+    { getId :: String
+    } deriving (Show)
+    
+data SExp
+    = SSExp   SExp [SExp]
+    | SInteger Integer
+    | SIntOp String SExp SExp -- Should we move to somewhere else?
+    | SDouble  Double
+    | SNumeric SExp
+    | SString  String
+    | SBool    Bool
+    | SId      Identifier
+    deriving (Show)
 
-newtype Val = IntVal Integer
-    deriving (Show, Eq)
-
-type Env = [(String,Val)]
+type Env = [(String, SExp)]
 
 emptyEnv :: Env
 emptyEnv = []
+
+addToEnv :: k -> v -> [(k,v)] -> [(k,v)]
+addToEnv k v env = (k,v):env
