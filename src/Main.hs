@@ -36,7 +36,7 @@ repl env = runInputT defaultSettings l
                     Just "quit" -> pure ()
                     Just "" -> l
                     Just input -> do case parse mmvp "<stdin>" input of
-                                       Right exp -> outputStrLn (show $ trans $ eval exp env)
+                                       Right exp -> outputStrLn (show $ eval exp env)
                                        Left err -> outputStrLn (show err)
                                      l
 

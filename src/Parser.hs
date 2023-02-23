@@ -54,6 +54,7 @@ lexerSpace :: Parser a -> Parser a
 lexerSpace = L.lexeme skipSpace
 
 intExp = do SInteger <$> integer
+boolExp = do SBool <$> bool
 
 symbol :: String -> Parser String
 symbol = L.symbol skipSpace
@@ -64,10 +65,17 @@ arOperators =
     , C.InfixL (SIntOp "/" <$ symbol "/") ]
   , [ C.InfixL (SIntOp "+" <$ symbol "+")
     , C.InfixL (SIntOp "-" <$ symbol "-") ]
+  , [ C.InfixL (SCompOp ">" <$ symbol ">")
+    , C.InfixL (SCompOp "<" <$ symbol "<") 
+    , C.InfixL (SCompOp ">=" <$ symbol ">=")
+    , C.InfixL (SCompOp "<=" <$ symbol "<=") 
+    , C.InfixL (SCompOp "!=" <$ symbol "!=")
+    , C.InfixL (SCompOp "==" <$ symbol "==") ]
   ]
 
+
 mvp :: Parser SExp
-mvp = intExp <|> mmvp
+mvp = boolExp <|> intExp <|> mmvp
 
 mmvp :: Parser SExp
 mmvp = makeExprParser mvp arOperators

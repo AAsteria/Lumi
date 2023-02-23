@@ -13,10 +13,12 @@ data SExp
     | SString  String
     | SBool    Bool
     | SId      Identifier
+    | SCompOp String SExp SExp
     deriving (Show)
 
 data Val = IntVal Integer
          | DoubleVal Double
+         | BoolVal Bool
     deriving (Show)
 
 type Env = [(String, SExp)]
