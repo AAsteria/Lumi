@@ -7,21 +7,21 @@ newtype Identifier = Identifier
 data SExp
     = SSExp   SExp [SExp]
     | SInteger Integer
-    | SIntOp String SExp SExp -- Should we move to somewhere else?
     | SDouble  Double
     | SNumeric SExp
     | SString  String
     | SBool    Bool
     | SId      Identifier
+    | SIntOp String SExp SExp
     | SCompOp String SExp SExp
+    | SBoolOp String SExp SExp
     deriving (Show)
 
 data Val = IntVal Integer
-         | DoubleVal Double
          | BoolVal Bool
     deriving (Show)
 
-type Env = [(String, SExp)]
+type Env = [(String, Val)]
 
 emptyEnv :: Env
 emptyEnv = []

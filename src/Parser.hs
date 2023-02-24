@@ -7,6 +7,7 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Scientific
 import Language.Haskell.TH
+import Control.Monad (void)
 import Control.Monad.Combinators.Expr as C
 
 type Parser = Parsec Void String
@@ -42,7 +43,7 @@ identifier = label "identifier" $ lexerSpace $ do
 
 sexp :: Parser (SExp, [SExp])
 sexp = label "s-expression" $ lexerSpace $
-  between (lexerSpace (char '(')) (char ')') ((,) <$> ssvp <*> many ssvp)
+  between (lexerSpace (char '(')) (char ')') ((,) <$> mmvp <*> many mmvp)
 
 skipSpace :: Parser ()
 skipSpace = L.space
@@ -53,9 +54,6 @@ skipSpace = L.space
 lexerSpace :: Parser a -> Parser a
 lexerSpace = L.lexeme skipSpace
 
-intExp = do SInteger <$> integer
-boolExp = do SBool <$> bool
-
 symbol :: String -> Parser String
 symbol = L.symbol skipSpace
 
@@ -65,31 +63,33 @@ arOperators =
     , C.InfixL (SIntOp "/" <$ symbol "/") ]
   , [ C.InfixL (SIntOp "+" <$ symbol "+")
     , C.InfixL (SIntOp "-" <$ symbol "-") ]
-  , [ C.InfixL (SCompOp ">" <$ symbol ">")
-    , C.InfixL (SCompOp "<" <$ symbol "<") 
-    , C.InfixL (SCompOp ">=" <$ symbol ">=")
-    , C.InfixL (SCompOp "<=" <$ symbol "<=") 
-    , C.InfixL (SCompOp "!=" <$ symbol "!=")
-    , C.InfixL (SCompOp "==" <$ symbol "==") ]
+  , [ C.InfixR (SCompOp ">=" <$ symbol ">=")
+    , C.InfixR (SCompOp "<=" <$ symbol "<=")
+    , C.InfixR (SCompOp ">" <$ symbol ">")
+    , C.InfixR (SCompOp "<" <$ symbol "<")  
+    , C.InfixR (SCompOp "!=" <$ symbol "!=")
+    , C.InfixR (SCompOp "==" <$ symbol "==") ]
+  , [ C.InfixN (SBoolOp "||" <$ symbol "||")
+    , C.InfixN (SBoolOp "&&" <$ symbol "&&") ]
   ]
 
-
+-- Parser to represent expression variants
+-- usage: parseTest mvp " "
 mvp :: Parser SExp
-mvp = boolExp <|> intExp <|> mmvp
+mvp = SBool <$> bool
+   <|> SInteger <$> integer
+   <|> mmvp
 
 mmvp :: Parser SExp
 mmvp = makeExprParser mvp arOperators
 
--- Parser to represent SExp-specific variants
--- usage: parseTest ssvp " "
--- TODO: move bool, double, string, identifier to "mvp", make them work!
-ssvp :: Parser SExp
-ssvp = choice
-  [ SBool <$> bool
-  , SNumeric <$> numeric
-  , SString <$> str
-  , SId <$> identifier
-  ]
+-- ssvp :: Parser SExp
+-- ssvp = choice
+--   [ SBool <$> bool
+--   , SNumeric <$> numeric
+--   , SString <$> str
+--   , SId <$> identifier
+--   ]
 
 -- Parser helper function
 -- usage: case parses "   5.5" of { Left e -> putStrLn e; Right r -> print r }
@@ -97,7 +97,7 @@ parses :: String -> Either String SExp
 parses input =
   let
     result = parse
-      (between skipSpace eof ssvp)
+      (between skipSpace eof mvp)
       ""
       input
   in
