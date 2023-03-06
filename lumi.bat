@@ -7,7 +7,7 @@
 @REM 4. Click "New", then copy and paste your Lumi folder's path into system paths
 
 @echo off
-cd /d %USERPROFILE%\Desktop\CS 498\Lumi
+cd /d ~\Lumi
 @REM Ignore for now: "call npm.cmd start"
 call stack install
 cd /d %USERPROFILE%\AppData\Roaming\local\bin
