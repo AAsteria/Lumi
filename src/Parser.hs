@@ -58,38 +58,48 @@ symbol :: String -> Parser String
 symbol = L.symbol skipSpace
 
 arOperators :: [[Operator Parser SExp]]
-arOperators =
-  [ [ C.InfixL (SIntOp "*" <$ symbol "*")
-    , C.InfixL (SIntOp "/" <$ symbol "/") ]
-  , [ C.InfixL (SIntOp "+" <$ symbol "+")
-    , C.InfixL (SIntOp "-" <$ symbol "-") ]
-  , [ C.InfixR (SCompOp ">=" <$ symbol ">=")
-    , C.InfixR (SCompOp "<=" <$ symbol "<=")
-    , C.InfixR (SCompOp ">" <$ symbol ">")
-    , C.InfixR (SCompOp "<" <$ symbol "<")  
-    , C.InfixR (SCompOp "!=" <$ symbol "!=")
-    , C.InfixR (SCompOp "==" <$ symbol "==") ]
-  , [ C.InfixN (SBoolOp "||" <$ symbol "||")
-    , C.InfixN (SBoolOp "&&" <$ symbol "&&") ]
-  ]
+arOperators = 
+  [ [ C.InfixL (SNumericOp "+" <$ symbol "+")
+    , C.InfixL (SNumericOp "-" <$ symbol "-") ]  
+  , [ C.InfixL (SNumericOp "*" <$ symbol "*")
+    , C.InfixL (SNumericOp "/" <$ symbol "/") ]]
+  -- [ [ C.InfixL (SDoubleOp "+" <$ symbol "+")
+  --   , C.InfixL (SDoubleOp "-" <$ symbol "-") ]  
+  -- , [ C.InfixL (SDoubleOp "*" <$ symbol "*")
+  --   , C.InfixL (SDoubleOp "/" <$ symbol "/") ]
+  -- , [ C.InfixL (SIntOp "*" <$ symbol "*")
+  --   , C.InfixL (SIntOp "/" <$ symbol "/") ]
+  -- , [ C.InfixL (SIntOp "+" <$ symbol "+")
+  --   , C.InfixL (SIntOp "-" <$ symbol "-") ] 
+  -- , [ C.InfixR (SCompOp ">=" <$ symbol ">=")
+  --   , C.InfixR (SCompOp "<=" <$ symbol "<=")
+  --   , C.InfixR (SCompOp ">" <$ symbol ">")
+  --   , C.InfixR (SCompOp "<" <$ symbol "<")  
+  --   , C.InfixR (SCompOp "!=" <$ symbol "!=")
+  --   , C.InfixR (SCompOp "==" <$ symbol "==") ]
+  -- , [ C.InfixN (SBoolOp "||" <$ symbol "||")
+  --   , C.InfixN (SBoolOp "&&" <$ symbol "&&") ]
+  -- ]
 
 -- Parser to represent expression variants
 -- usage: parseTest mvp " "
 mvp :: Parser SExp
 mvp = SBool <$> bool
-   <|> SInteger <$> integer
+  --  <|> SInteger <$> integer
+  --  <|> SDouble <$> double
+   <|> SNumeric <$> numeric
    <|> mmvp
 
 mmvp :: Parser SExp
 mmvp = makeExprParser mvp arOperators
 
--- ssvp :: Parser SExp
--- ssvp = choice
---   [ SBool <$> bool
---   , SNumeric <$> numeric
---   , SString <$> str
---   , SId <$> identifier
---   ]
+ssvp :: Parser SExp
+ssvp = choice
+  [ SBool <$> bool
+  , SNumeric <$> numeric
+  , SString <$> str
+  , SId <$> identifier
+  ]
 
 -- Parser helper function
 -- usage: case parses "   5.5" of { Left e -> putStrLn e; Right r -> print r }

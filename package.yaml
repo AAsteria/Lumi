@@ -41,6 +41,7 @@ executables:
     - time >= 1.8.0
     - optparse-applicative
     - megaparsec
+    - parsec >= 2.0.0.0
     - scientific >= 0.0.0.0
     - parser-combinators >= 1.0.0
     - haskeline >= 0.6.0
