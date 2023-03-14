@@ -101,7 +101,7 @@ compOps = [("<", lessThan)
          , ("<=", lessThanOrEqual)
          , (">=", greaterThanOrEqual)
          , ("==", equal)
-         , ("/=", notEqual)]
+         , ("!=", notEqual)]
 
 boolOps :: [(String, Bool -> Bool -> Bool)]
 boolOps = [ ("&&",(&&))
@@ -117,11 +117,14 @@ liftBoolOp :: (Bool -> Bool -> Bool) -> Val -> Val -> Val
 liftBoolOp f (BoolVal i1) (BoolVal i2) = BoolVal (f i1 i2)
 liftBoolOp f _            _            = BoolVal False
 
--- -- trans (Val i) = i
+-- trans (Val i) = i
 
+-- Simple Eval Transition Station
 eval :: SExp -> Env -> Val
 eval (SNumeric i) _ = NumericVal i
 eval (SBool b) _ = BoolVal b
+eval (SString s) _ = StringVal s
+eval (SId id) _ = IdVal id
 
 eval (SNumericOp op e1 e2) env =
   let v1 = eval e1 env

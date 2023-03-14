@@ -35,11 +35,25 @@ numeric = label "number" $ lexerSpace $ do
 str :: Parser String
 str = label "string" $ lexerSpace $ between (char '"') (char '"') (takeWhileP Nothing (/= '"'))
 
+-- Reserved Words Dictionary
+rwd :: [Identifier]
+rwd = map Identifier ["if","else","in","False","True","OTHER","None"
+      ,"struct","for","do"
+      ,"MODE"]
+
+unIdentifier :: Identifier -> String
+unIdentifier (Identifier s) = s
+instance Eq Identifier where
+  (Identifier s1) == (Identifier s2) = s1 == s2
+  
 identifier :: Parser Identifier
 identifier = label "identifier" $ lexerSpace $ do
     first <- letterChar <|> char '_'
     seq <- many $ alphaNumChar <|> char '_'
-    pure $ Identifier $ first : seq
+    let ident = Identifier $ first : seq
+    if ident `elem` rwd
+      then fail $ "Reserved Word As Identifier ERROR! " ++ unIdentifier ident
+      else pure ident
 
 sexp :: Parser (SExp, [SExp])
 sexp = label "s-expression" $ lexerSpace $
@@ -57,20 +71,26 @@ lexerSpace = L.lexeme skipSpace
 symbol :: String -> Parser String
 symbol = L.symbol skipSpace
 
+notFollowedByEq :: [Char] -> Parser [Char]
+notFollowedByEq keyword = do
+  lexerSpace $ try $ do
+    -- Match the keyword, followed by anything other than an equals sign
+    string keyword <* notFollowedBy (symbol "=")
+
 arOperators :: [[Operator Parser SExp]]
 arOperators = 
   [ [ C.InfixL (SNumericOp "+" <$ symbol "+")
     , C.InfixL (SNumericOp "-" <$ symbol "-") ]  
   , [ C.InfixL (SNumericOp "*" <$ symbol "*")
-    , C.InfixL (SNumericOp "/" <$ symbol "/") ]
-  , [ C.InfixR (SCompOp ">=" <$ symbol ">=")
-    , C.InfixR (SCompOp "<=" <$ symbol "<=")
-    , C.InfixR (SCompOp ">" <$ symbol ">")
-    , C.InfixR (SCompOp "<" <$ symbol "<")  
-    , C.InfixR (SCompOp "!=" <$ symbol "!=")
-    , C.InfixR (SCompOp "==" <$ symbol "==") ]
-  , [ C.InfixN (SBoolOp "||" <$ symbol "||")
-    , C.InfixN (SBoolOp "&&" <$ symbol "&&") ]
+    , C.InfixL (SNumericOp "/" <$ notFollowedByEq "/") ]
+  , [ C.InfixN (SCompOp ">=" <$ symbol ">=")
+    , C.InfixN (SCompOp "<=" <$ symbol "<=")
+    , C.InfixN (SCompOp ">" <$ symbol ">")
+    , C.InfixN (SCompOp "<" <$ symbol "<")  
+    , C.InfixN (SCompOp "!=" <$ symbol "!=")
+    , C.InfixN (SCompOp "==" <$ symbol "==") ]
+  , [ C.InfixL (SBoolOp "||" <$ symbol "||")
+    , C.InfixL (SBoolOp "&&" <$ symbol "&&") ]
   ]
 
 -- Parser to represent expression variants
@@ -80,18 +100,12 @@ mvp = SBool <$> bool
   --  <|> SInteger <$> integer
   --  <|> SDouble <$> double
    <|> SNumeric <$> numeric
+   <|> SString <$> str
+   <|> SId <$> identifier
    <|> mmvp
 
 mmvp :: Parser SExp
 mmvp = makeExprParser mvp arOperators
-
-ssvp :: Parser SExp
-ssvp = choice
-  [ SBool <$> bool
-  , SNumeric <$> numeric
-  , SString <$> str
-  , SId <$> identifier
-  ]
 
 -- Parser helper function
 -- usage: case parses "   5.5" of { Left e -> putStrLn e; Right r -> print r }

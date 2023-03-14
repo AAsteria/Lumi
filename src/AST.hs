@@ -27,6 +27,8 @@ data Val = IntVal Integer
          | DoubleVal Double
          | NumericVal SExp
          | BoolVal Bool
+         | StringVal String
+         | IdVal Identifier
     deriving (Show)
 
 type Env = [(String, Val)]
