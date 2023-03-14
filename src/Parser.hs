@@ -62,24 +62,16 @@ arOperators =
   [ [ C.InfixL (SNumericOp "+" <$ symbol "+")
     , C.InfixL (SNumericOp "-" <$ symbol "-") ]  
   , [ C.InfixL (SNumericOp "*" <$ symbol "*")
-    , C.InfixL (SNumericOp "/" <$ symbol "/") ]]
-  -- [ [ C.InfixL (SDoubleOp "+" <$ symbol "+")
-  --   , C.InfixL (SDoubleOp "-" <$ symbol "-") ]  
-  -- , [ C.InfixL (SDoubleOp "*" <$ symbol "*")
-  --   , C.InfixL (SDoubleOp "/" <$ symbol "/") ]
-  -- , [ C.InfixL (SIntOp "*" <$ symbol "*")
-  --   , C.InfixL (SIntOp "/" <$ symbol "/") ]
-  -- , [ C.InfixL (SIntOp "+" <$ symbol "+")
-  --   , C.InfixL (SIntOp "-" <$ symbol "-") ] 
-  -- , [ C.InfixR (SCompOp ">=" <$ symbol ">=")
-  --   , C.InfixR (SCompOp "<=" <$ symbol "<=")
-  --   , C.InfixR (SCompOp ">" <$ symbol ">")
-  --   , C.InfixR (SCompOp "<" <$ symbol "<")  
-  --   , C.InfixR (SCompOp "!=" <$ symbol "!=")
-  --   , C.InfixR (SCompOp "==" <$ symbol "==") ]
-  -- , [ C.InfixN (SBoolOp "||" <$ symbol "||")
-  --   , C.InfixN (SBoolOp "&&" <$ symbol "&&") ]
-  -- ]
+    , C.InfixL (SNumericOp "/" <$ symbol "/") ]
+  , [ C.InfixR (SCompOp ">=" <$ symbol ">=")
+    , C.InfixR (SCompOp "<=" <$ symbol "<=")
+    , C.InfixR (SCompOp ">" <$ symbol ">")
+    , C.InfixR (SCompOp "<" <$ symbol "<")  
+    , C.InfixR (SCompOp "!=" <$ symbol "!=")
+    , C.InfixR (SCompOp "==" <$ symbol "==") ]
+  , [ C.InfixN (SBoolOp "||" <$ symbol "||")
+    , C.InfixN (SBoolOp "&&" <$ symbol "&&") ]
+  ]
 
 -- Parser to represent expression variants
 -- usage: parseTest mvp " "

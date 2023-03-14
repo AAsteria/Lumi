@@ -1,12 +1,13 @@
+{-# LANGUAGE GADTs #-}
+
 module AST where
 
 newtype Identifier = Identifier
     { getId :: String
     } deriving (Show)
 
--- Define the NumericOp data type
 data NumericOp = Add | Subtract | Multiply | Divide deriving (Eq, Show)
-
+data CompOp = LessThan | GreaterThan | LessThanOrEqual | GreaterThanOrEqual | Equal | NotEqual deriving (Eq, Show)
 data SExp
     = SSExp   SExp [SExp]
     | SInteger Integer
