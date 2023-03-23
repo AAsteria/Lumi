@@ -2,6 +2,7 @@ module Main where
 import Parser
 import AST
 import Eval
+-- import Global
 
 import System.Console.ANSI
 import Options.Applicative
@@ -44,7 +45,7 @@ main :: IO ()
 main = do
     banner
     opts <- execParser optsParser
-    repl emptyEnv -- TODO: Create lumi command for it
+    repl [("x",IntVal 0)] -- TODO: Create lumi command for it
     putStrLn ""
     where
         -- lumi.sh -> run `lumi` in terminal
