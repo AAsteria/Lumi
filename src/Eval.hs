@@ -154,3 +154,14 @@ eval (SId var) env =
 eval (SIdAssign var e1 e2) env =
   let v1 = eval e1 env
    in eval e2 (addToEnv var v1 env)
+
+eval (SIf e1 e2 e3) env =
+  let v1 = eval e1 env
+   in case v1 of
+       BoolVal True -> eval e2 env
+       _            -> eval e3 env
+
+-- TODO: Eval function for SFunc
+-- eval (SFunc name argExps) env =
+
+eval _ _ = error "Invalid expression"

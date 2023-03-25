@@ -64,7 +64,7 @@ assign = do rword "when"
 -- unIdentifier (Identifier s) = s
 -- instance Eq Identifier where
 --   (Identifier s1) == (Identifier s2) = s1 == s2
-  
+
 identifier :: Parser String
 identifier = label "identifier" $ lexerSpace $ do
     first <- letterChar <|> char '_'
@@ -105,27 +105,49 @@ notFollowedByEq keyword = do
     string keyword <* notFollowedBy (symbol "=")
 
 arOperators :: [[Operator Parser (SExp a)]]
-arOperators = 
+arOperators =
   [ [ C.InfixL (SNumericOp Add <$ symbol "+")
-    , C.InfixL (SNumericOp Subtract <$ symbol "-") ]  
+    , C.InfixL (SNumericOp Subtract <$ symbol "-") ]
   , [ C.InfixL (SNumericOp Multiply <$ symbol "*")
     , C.InfixL (SNumericOp Divide <$ notFollowedByEq "/") ]
   , [ C.InfixN (SCompOp GreaterThanOrEqual <$ symbol ">=")
    , C.InfixN (SCompOp LessThanOrEqual <$ symbol "<=")
    , C.InfixN (SCompOp GreaterThan <$ symbol ">")
-   , C.InfixN (SCompOp LessThan <$ symbol "<")  
+   , C.InfixN (SCompOp LessThan <$ symbol "<")
    , C.InfixN (SCompOp NotEqual <$ symbol "!=")
    , C.InfixN (SCompOp Equal <$ symbol "==") ]
  , [ C.InfixL (SBoolOp "||" <$ symbol "||")
    , C.InfixL (SBoolOp "&&" <$ symbol "&&") ]
   ]
+
+parseFunc :: Parser (SExp a)
+parseFunc = do
+  funcName <- identifier
+  args <- many (space *> mmvp)
+  symbol ";"
+  return $ SFunc funcName args
+
+-- usage: parseTest mmvp "if 5 < 8 then Add 2 3; else Add 3 5; ;"
+parseIfElse :: Parser (SExp a)
+parseIfElse = do 
+  rword "if"
+  c <- mmvp
+  rword "then"
+  e1 <- mmvp
+  rword "else"
+  e2 <- mmvp
+  symbol ";"
+  return $ SIf c e1 e2
+
 -- Parser to represent expression variants
 -- usage: parseTest mvp " "
 mvp :: Parser (SExp a)
 mvp = SNumeric <$> numeric
    <|> bool
    <|> SString <$> str
+   <|> parseIfElse
    <|> assign
+   <|> parseFunc
    <|> SId <$> identifier
 
 mmvp :: Parser (SExp a)

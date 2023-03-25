@@ -17,8 +17,8 @@ data SExp a where
   SBoolOp :: String -> SExp a -> SExp a -> SExp a
   SNumericOp :: NumericOp -> SExp a -> SExp a -> SExp a
   SIdAssign :: String -> SExp a -> SExp a -> SExp a
-  -- SIf SExp SExp SExp
-  -- SFunc String SExp
+  SIf :: SExp a -> SExp a -> SExp a -> SExp a
+  SFunc :: String -> [SExp a] -> SExp a
   deriving (Show, Eq)
 
 data Val where
