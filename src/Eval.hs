@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, RankNTypes #-}
 
 module Eval where
 import AST
@@ -9,41 +9,25 @@ import System.Console.Haskeline
 import Language.Haskell.TH (Exp, Lit (IntegerL))
 import Data.Typeable
 
--- Evaluation function for NumericOp
-evalNumericOp :: NumericOp -> [SExp a] -> SExp a
-evalNumericOp Add args = foldl add (SInteger 0) args
-evalNumericOp Subtract args = foldl subtract' (SInteger 0) args
-evalNumericOp Multiply args = foldl multiply (SInteger 1) args
-evalNumericOp Divide args = foldl1 divide args
+-- -- Evaluation function for NumericOp
+-- evalNumericOp :: NumericOp -> [SExp a] -> SExp a
+-- evalNumericOp Add args = foldl add (SInteger 0) args
+-- evalNumericOp Subtract args = foldl subtract' (SInteger 0) args
+-- evalNumericOp Multiply args = foldl multiply (SInteger 1) args
+-- evalNumericOp Divide args = foldl1 divide args
 
--- Define the helper functions for NumericOp evaluation
-add :: SExp a -> SExp a -> SExp a
-add (SInteger x) (SInteger y) = SInteger (x + y)
-add (SDouble x) (SDouble y) = SDouble (x + y)
-add (SInteger x) (SDouble y) = SDouble (fromIntegral x + y)
-add (SDouble x) (SInteger y) = SDouble (x + fromIntegral y)
-add _ _ = error "Type error: arguments of the wrong type for '+'"
+applyBinaryOp :: (forall a. (Num a, Fractional a) => a -> a -> a) -> SExp a -> SExp a -> SExp a
+applyBinaryOp op (SInteger x) (SInteger y) = SDouble (fromIntegral x `op` fromIntegral y)
+applyBinaryOp op (SDouble x) (SDouble y) = SDouble (x `op` y)
+applyBinaryOp op (SInteger x) (SDouble y) = SDouble (fromIntegral x `op` y)
+applyBinaryOp op (SDouble x) (SInteger y) = SDouble (x `op` fromIntegral y)
+applyBinaryOp _ _ _ = error "Type error: arguments of the wrong type for binary operation"
 
-subtract' :: SExp a -> SExp a -> SExp a
-subtract' (SInteger x) (SInteger y) = SInteger (x - y)
-subtract' (SDouble x) (SDouble y) = SDouble (x - y)
-subtract' (SInteger x) (SDouble y) = SDouble (fromIntegral x - y)
-subtract' (SDouble x) (SInteger y) = SDouble (x - fromIntegral y)
-subtract' _ _ = error "Type error: arguments of the wrong type for '-'"
-
-multiply :: SExp a -> SExp a -> SExp a
-multiply (SInteger x) (SInteger y) = SInteger (x * y)
-multiply (SDouble x) (SDouble y) = SDouble (x * y)
-multiply (SInteger x) (SDouble y) = SDouble (fromIntegral x * y)
-multiply (SDouble x) (SInteger y) = SDouble (x * fromIntegral y)
-multiply _ _ = error "Type error: arguments of the wrong type for '*'"
-
-divide :: SExp a -> SExp a -> SExp a
-divide (SInteger x) (SInteger y) = SDouble (fromIntegral x / fromIntegral y)
-divide (SDouble x) (SDouble y) = SDouble (x / y)
-divide (SInteger x) (SDouble y) = SDouble (fromIntegral x / y)
-divide (SDouble x) (SInteger y) = SDouble (x / fromIntegral y)
-divide _ _ = error "Type error: arguments of the wrong type for '/'"
+add, subtract', multiply, divide :: SExp a -> SExp a -> SExp a
+add = applyBinaryOp (+)
+subtract' = applyBinaryOp (-)
+multiply = applyBinaryOp (*)
+divide = applyBinaryOp (/)
 
 numericOps :: [(NumericOp, SExp a -> SExp a -> SExp a)]
 numericOps = [ (Add, add)
@@ -120,19 +104,26 @@ liftBoolOp f (BoolVal i1) (BoolVal i2) = BoolVal (f i1 i2)
 liftBoolOp f _            _            = BoolVal False
 
 -- trans (Val i) = i
+valToSExp :: Val -> SExp a
+valToSExp (IntVal i) = SInteger i
+valToSExp (DoubleVal d) = SDouble d
+valToSExp (BoolVal d) = SBool d
 
 -- Simple Eval Transition Station
 eval :: SExp a -> Env -> Val
-eval (SNumeric i) _ = NumericVal i
+eval (SInteger i) _ = IntVal i
+eval (SDouble i) _ = DoubleVal i
 eval (SBool b) _ = BoolVal b
 
 -- TODO: Modify the following two evaluation functions
 -- Now only parser works!
--- eval (SNumericOp op e1 e2) env =
---   let v1 = eval e1 env
---       v2 = eval e2 env
---       Just f = lookup op numericOps
---    in liftNumericOp f v1 v2
+eval (SNumericOp op e1 e2) env =
+  let v1 = eval e1 env
+      v2 = eval e2 env
+      v11 = valToSExp v1
+      v22 = valToSExp v2
+      Just f = lookup op numericOps
+  in eval (f v11 v22) env
 
 -- eval (SCompOp op e1 e2) env =
 --   let v1 = eval e1 env
