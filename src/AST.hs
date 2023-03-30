@@ -33,6 +33,9 @@ instance Show Val where
   show (BoolVal b) = show b
   show (NumericVal v) = show v
 
+newtype Exp a = 
+  Val a
+  deriving (Eq, Show)
 
 type Env = [(String, Val)]
 
