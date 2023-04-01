@@ -28,7 +28,7 @@ banner = do
     putStrLn ""
 
 -- Lumi Repl
-repl :: Env -> IO ()
+repl :: (Fractional a, Ord a, Show a) => Env a -> IO ()
 repl env = runInputT defaultSettings l
   where l = do p <- getInputLine "lumi> "
                case p of
@@ -45,7 +45,7 @@ main :: IO ()
 main = do
     banner
     opts <- execParser optsParser
-    repl [("x",IntVal 0)] -- TODO: Create lumi command for it
+    repl [("x", SInteger 0)] -- TODO: Create lumi command for it
     putStrLn ""
     where
         -- lumi.sh -> run `lumi` in terminal

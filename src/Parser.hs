@@ -14,7 +14,6 @@ import Control.Monad.Combinators.Expr as C
 
 type Parser = Parsec Void String
 
-
 bool = label "boolean" $ lexerSpace $ do
   b <- False <$ string "False" <|> True <$ string "True"
   return $ SBool b
@@ -149,9 +148,14 @@ mvp = SNumeric <$> numeric
    <|> assign
    <|> parseFunc
    <|> SId <$> identifier
+   <|> mmvp
 
 mmvp :: Parser (SExp a)
-mmvp = makeExprParser mvp arOperators
+mmvp = label "expression" $ makeExprParser mvp arOperators
+
+
+-- mmvp :: Parser (SExp a)
+-- mmvp = makeExprParser mvp arOperators
 
 -- Parser helper function
 -- usage: case parses "   5.5" of { Left e -> putStrLn e; Right r -> print r }

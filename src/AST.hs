@@ -19,28 +19,13 @@ data SExp a where
   SIdAssign :: String -> SExp a -> SExp a -> SExp a
   SIf :: SExp a -> SExp a -> SExp a -> SExp a
   SFunc :: String -> [SExp a] -> SExp a
+  SVal :: a -> SExp a
   deriving (Show, Eq)
 
-data Val where
-  IntVal :: Integer -> Val
-  DoubleVal :: Double -> Val
-  NumericVal :: SExp a -> Val
-  BoolVal :: Bool -> Val
+type Env a = [(String, SExp a)]
 
-instance Show Val where
-  show (IntVal n) = show n
-  show (DoubleVal d) = show d
-  show (BoolVal b) = show b
-  show (NumericVal v) = show v
-
-newtype Exp a = 
-  Val a
-  deriving (Eq, Show)
-
-type Env = [(String, Val)]
-
-emptyEnv :: Env
+emptyEnv :: Env a
 emptyEnv = []
 
-addToEnv :: String -> Val -> Env -> Env
+addToEnv :: String -> SExp a -> Env a -> Env a
 addToEnv k v env = (k, v) : env
