@@ -45,7 +45,7 @@ main :: IO ()
 main = do
     banner
     opts <- execParser optsParser
-    repl [("x", SInteger 0)] -- TODO: Create lumi command for it
+    repl [("x", SVal 0)] -- TODO: Create lumi command for it
     putStrLn ""
     where
         -- lumi.sh -> run `lumi` in terminal

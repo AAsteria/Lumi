@@ -44,25 +44,11 @@ str = label "string" $ lexerSpace $ between (char '"') (char '"') (takeWhileP No
 
 -- Reserved Words Dictionary
 rwd :: [String]
-rwd = ["if","else","in","False","True","OTHER","None"
+rwd = ["if","else","in","False","True","OTHER","None","when","eval"
       ,"struct","for","do","MODE","NORMAL","SYMBOL"]
 
 rword :: String -> Parser ()
 rword w = (lexerSpace . try) (string w *> notFollowedBy alphaNumChar)
-
--- when x = 6.5 eval 8.8 + x + 2*x
-assign :: Parser (SExp a)
-assign = do rword "when"
-            v <- identifier
-            symbol "="
-            e1 <- mmvp
-            rword "eval"
-            SIdAssign v e1 <$> mmvp
-
--- unIdentifier :: Identifier -> String
--- unIdentifier (Identifier s) = s
--- instance Eq Identifier where
---   (Identifier s1) == (Identifier s2) = s1 == s2
 
 identifier :: Parser String
 identifier = label "identifier" $ lexerSpace $ do
@@ -105,10 +91,10 @@ notFollowedByEq keyword = do
 
 arOperators :: [[Operator Parser (SExp a)]]
 arOperators =
-  [ [ C.InfixL (SNumericOp Add <$ symbol "+")
-    , C.InfixL (SNumericOp Subtract <$ symbol "-") ]
-  , [ C.InfixL (SNumericOp Multiply <$ symbol "*")
+  [ [ C.InfixL (SNumericOp Multiply <$ symbol "*")
     , C.InfixL (SNumericOp Divide <$ notFollowedByEq "/") ]
+  , [ C.InfixL (SNumericOp Add <$ symbol "+")
+    , C.InfixL (SNumericOp Subtract <$ symbol "-") ]
   , [ C.InfixN (SCompOp GreaterThanOrEqual <$ symbol ">=")
    , C.InfixN (SCompOp LessThanOrEqual <$ symbol "<=")
    , C.InfixN (SCompOp GreaterThan <$ symbol ">")
@@ -119,14 +105,8 @@ arOperators =
    , C.InfixL (SBoolOp "&&" <$ symbol "&&") ]
   ]
 
-parseFunc :: Parser (SExp a)
-parseFunc = do
-  funcName <- identifier
-  args <- many (space *> mmvp)
-  symbol ";"
-  return $ SFunc funcName args
-
 -- usage: parseTest mmvp "if 5 < 8 then Add 2 3; else Add 3 5; ;"
+-- if 3 > 8 then 5/6 else 2*8.5;
 parseIfElse :: Parser (SExp a)
 parseIfElse = do 
   rword "if"
@@ -137,6 +117,25 @@ parseIfElse = do
   e2 <- mmvp
   symbol ";"
   return $ SIf c e1 e2
+  
+-- when x = 6.5 eval 8.8 + x + 2*x end
+assign :: Parser (SExp a)
+assign = do
+  rword "when"
+  v <- identifier
+  symbol "="
+  e1 <- mmvp
+  rword "eval"
+  e2 <- mmvp
+  rword "end"
+  return $ SIdAssign v e1 e2
+
+parseFunc :: Parser (SExp a)
+parseFunc = do
+  funcName <- identifier
+  args <- many (space *> mmvp)
+  symbol ";"
+  return $ SFunc funcName args
 
 -- Parser to represent expression variants
 -- usage: parseTest mvp " "
@@ -148,14 +147,10 @@ mvp = SNumeric <$> numeric
    <|> assign
    <|> parseFunc
    <|> SId <$> identifier
-   <|> mmvp
+  --  <|> mmvp
 
 mmvp :: Parser (SExp a)
 mmvp = label "expression" $ makeExprParser mvp arOperators
-
-
--- mmvp :: Parser (SExp a)
--- mmvp = makeExprParser mvp arOperators
 
 -- Parser helper function
 -- usage: case parses "   5.5" of { Left e -> putStrLn e; Right r -> print r }

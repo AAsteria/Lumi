@@ -121,24 +121,22 @@ eval (SBoolOp op e1 e2) env =
       Just f = lookup op boolOps
   in SBool (liftBoolOp f v1 v2)
 
--- TODO: Rewrite these Eval functions
+eval (SId var) env =
+  case lookup var env of
+    Just val -> val
+    Nothing -> SInteger 0
 
--- eval (SId var) env =
---   case lookup var env of
---     Just val -> val
---     Nothing -> SInteger 0
+eval (SIdAssign var e1 e2) env =
+  let v1 = eval e1 env
+   in eval e2 (addToEnv var v1 env)
 
--- eval (SIdAssign var e1 e2) env =
---   let v1 = eval e1 env
---   in eval e2 (addToEnv var v1 env)
+eval (SIf e1 e2 e3) env =
+  let v1 = eval e1 env
+  in case v1 of
+    SBool True -> eval e2 env
+    _ -> eval e3 env
 
--- eval (SIf e1 e2 e3) env =
---   let v1 = eval e1 env
---   in case v1 of
---     SBool True -> eval e2 env
---     _ -> eval e3 env
-
--- eval (SFunc x es) env = 
+-- TODO: Eval function for SFunc
 
 liftBoolOp :: (Bool -> Bool -> Bool) -> SExp a -> SExp a -> Bool
 liftBoolOp f (SBool b1) (SBool b2) = f b1 b2
