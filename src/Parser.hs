@@ -11,6 +11,7 @@ import Data.Scientific
 import Language.Haskell.TH
 import Control.Monad (void)
 import Control.Monad.Combinators.Expr as C
+import GHC.Read (paren)
 
 type Parser = Parsec Void String
 
@@ -41,6 +42,12 @@ numeric = label "number" $ lexerSpace $ do
 
 str :: Parser String
 str = label "string" $ lexerSpace $ between (char '"') (char '"') (takeWhileP Nothing (/= '"'))
+
+list :: Parser [SExp a]
+list = label "list" $ lexerSpace $ between (char '[') (char ']') (sepBy mmvp (symbol ","))
+
+parens :: Parser a -> Parser a
+parens = between (symbol "(") (symbol ")")
 
 -- Reserved Words Dictionary
 rwd :: [String]
@@ -121,7 +128,16 @@ parseIfElse = do
   e2 <- mmvp
   symbol ";"
   return $ SIf c e1 e2
-  
+
+-- parseWhile :: Parser (SExp a)
+-- parseWhile = do 
+--   rword "while"
+--   cond <- mmvp
+--   rword "do"
+--   block <- many mmvp
+--   rword "end"
+--   return $ SWhile cond (SList block) (SBool True)
+
 -- when x = 6.5 eval 8.8 + x + 2*x end
 assign :: Parser (SExp a)
 assign = do
@@ -151,7 +167,7 @@ mvp = SNumeric <$> numeric
    <|> assign
    <|> parseFunc
    <|> SId <$> identifier
-  --  <|> mmvp
+   <|> parens mmvp
 
 mmvp :: Parser (SExp a)
 mmvp = label "expression" $ makeExprParser mvp arOperators

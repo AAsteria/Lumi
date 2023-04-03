@@ -18,6 +18,7 @@ data SExp a where
   SNumericOp :: NumericOp -> SExp a -> SExp a -> SExp a
   SIdAssign :: String -> SExp a -> SExp a -> SExp a
   SIf :: SExp a -> SExp a -> SExp a -> SExp a
+  SWhile :: SExp a -> SExp a -> SExp a -> SExp a
   SFunc :: String -> [SExp a] -> SExp a
   SList :: [SExp a] -> SExp a
   SVal :: a -> SExp a

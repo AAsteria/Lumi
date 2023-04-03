@@ -13,13 +13,26 @@ import GHC.Generics
 import Data.Foldable (toList)
 import Data.Maybe
 
+simplify :: (Fractional a, Integral a) => SExp a -> SExp a
+simplify (SInteger x) = SInteger x
+simplify (SDouble x) = SDouble x
+simplify (SNumeric (SInteger x)) = SInteger x
+simplify (SNumeric (SDouble x)) = SDouble x
+simplify (SNumeric (SNumeric x)) = simplify x
+simplify (SList []) = SList []
+simplify (SList (x:xs)) = simplifyList (simplify x) (simplify (SList xs))
+
+simplifyList :: (Fractional a, Integral a) => SExp a -> SExp a -> SExp a
+simplifyList (SInteger x) (SList xs) = SList (map (\(SInteger y) -> SInteger (gcd x y)) xs)
+simplifyList _ _ = error "Invalid Argument Type."
+
 -- Evaluation function for NumericOps
 -- evalNumericOp Add [SInteger 2, SInteger 2, SDouble 3.5]
 evalNumericOp :: (Foldable t, Fractional a, Floating a, Integral a) => NumericOp -> t (SExp a) -> SExp a
 evalNumericOp Add args = foldl add (SInteger 0) args
 evalNumericOp Subtract args = foldl subtract' (SInteger 0) args
 evalNumericOp Multiply args = foldl multiply (SInteger 1) args
-evalNumericOp Divide args = foldl1 divide args
+evalNumericOp Divide args = simplify $ foldl1 divide args
 evalNumericOp Modulus args = foldl1 modulus args
 evalNumericOp Exponentiate args = foldl1 exponentiate args
 evalNumericOp NNExponentiate args = foldl1 nnexponentiate args
@@ -150,11 +163,19 @@ eval (SIdAssign var e1 e2) env =
   let v1 = eval e1 env
    in eval e2 (addToEnv var v1 env)
 
+eval (SList []) env = SList []  -- empty list evaluates to itself
+eval (SList (x:xs)) env =
+  let xVal = eval x env
+      restVal = eval (SList xs) env
+      (SList rest) = restVal
+  in SList (xVal : rest)
+
 eval (SIf e1 e2 e3) env =
   let v1 = eval e1 env
   in case v1 of
     SBool True -> eval e2 env
     _ -> eval e3 env
+
 
 -- TODO: Eval function for SFunc
 
