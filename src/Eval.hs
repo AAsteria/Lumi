@@ -15,11 +15,14 @@ import Data.Maybe
 
 -- Evaluation function for NumericOps
 -- evalNumericOp Add [SInteger 2, SInteger 2, SDouble 3.5]
-evalNumericOp :: (Foldable t, Fractional a) => NumericOp -> t (SExp a) -> SExp a
+evalNumericOp :: (Foldable t, Fractional a, Floating a, Integral a) => NumericOp -> t (SExp a) -> SExp a
 evalNumericOp Add args = foldl add (SInteger 0) args
 evalNumericOp Subtract args = foldl subtract' (SInteger 0) args
 evalNumericOp Multiply args = foldl multiply (SInteger 1) args
 evalNumericOp Divide args = foldl1 divide args
+evalNumericOp Modulus args = foldl1 modulus args
+evalNumericOp Exponentiate args = foldl1 exponentiate args
+evalNumericOp NNExponentiate args = foldl1 nnexponentiate args
 
 applyArithOp :: (forall a. Num a => a -> a -> a) -> SExp a -> SExp a -> SExp a
 applyArithOp op (SInteger x) (SInteger y) = SInteger (x `op` y)
@@ -45,11 +48,28 @@ divide (SInteger x) (SDouble y) = SDouble (fromIntegral x / y)
 divide (SDouble x) (SInteger y) = SDouble (x / fromIntegral y)
 divide _ _ = error "Numeric operation with non-numeric arguments."
 
-numericOps :: Fractional a => [(NumericOp, SExp a -> SExp a -> SExp a)]
+modulus :: Num a=> SExp a -> SExp a -> SExp a
+modulus (SInteger x) (SInteger y) = SInteger (x `mod` y)
+modulus _ _ = error "Modulus operation with non-integer arguments."
+
+exponentiate :: Floating a => SExp a -> SExp a -> SExp a
+exponentiate (SInteger x) (SInteger y) = SDouble (fromIntegral x ** fromIntegral y)
+exponentiate (SDouble x) (SInteger y) = SDouble (x ** fromIntegral y)
+exponentiate (SInteger x) (SDouble y) = SDouble (fromIntegral x ** y)
+exponentiate (SDouble x) (SDouble y) = SDouble (x ** y)
+
+nnexponentiate :: (Num a) => SExp a -> SExp b -> SExp a
+nnexponentiate (SInteger x) (SInteger y) = SDouble (fromIntegral x ^ fromIntegral y)
+nnexponentiate (SDouble x) (SInteger y) = SDouble (x ^ fromIntegral y)
+
+numericOps :: (Fractional a, Floating a) => [(NumericOp, SExp a -> SExp a -> SExp a)]
 numericOps = [ (Add, add)
              , (Subtract, subtract')
              , (Multiply, multiply)
              , (Divide, divide)
+             , (Modulus, modulus)
+             , (Exponentiate, exponentiate)
+             , (NNExponentiate, nnexponentiate)
              ]
 
 -- Evaluation function for CompOp
@@ -98,7 +118,7 @@ boolOps :: [(String, Bool -> Bool -> Bool)]
 boolOps = [ ("&&",(&&))
           , ("||",(||))]
 
-eval :: (Fractional a, Ord a, Show a) => SExp a -> Env a -> SExp a
+eval :: (Fractional a, Ord a, Show a, Floating a) => SExp a -> Env a -> SExp a
 eval (SNumeric i) _ = SNumeric i
 eval (SBool b) _ = SBool b
 eval (SString s) _ = SString s

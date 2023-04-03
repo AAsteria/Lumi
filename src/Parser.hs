@@ -91,8 +91,11 @@ notFollowedByEq keyword = do
 
 arOperators :: [[Operator Parser (SExp a)]]
 arOperators =
-  [ [ C.InfixL (SNumericOp Multiply <$ symbol "*")
-    , C.InfixL (SNumericOp Divide <$ notFollowedByEq "/") ]
+  [ [ C.InfixL (SNumericOp Exponentiate <$ symbol "**")
+    , C.InfixL (SNumericOp NNExponentiate <$ symbol "^")
+    , C.InfixL (SNumericOp Modulus <$ symbol "%") ]
+  , [C.InfixL (SNumericOp Multiply <$ symbol "*")
+    , C.InfixL (SNumericOp Divide <$ notFollowedByEq "/")]
   , [ C.InfixL (SNumericOp Add <$ symbol "+")
     , C.InfixL (SNumericOp Subtract <$ symbol "-") ]
   , [ C.InfixN (SCompOp GreaterThanOrEqual <$ symbol ">=")
@@ -104,6 +107,7 @@ arOperators =
  , [ C.InfixL (SBoolOp "||" <$ symbol "||")
    , C.InfixL (SBoolOp "&&" <$ symbol "&&") ]
   ]
+
 
 -- usage: parseTest mmvp "if 5 < 8 then Add 2 3; else Add 3 5; ;"
 -- if 3 > 8 then 5/6 else 2*8.5;

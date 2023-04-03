@@ -2,7 +2,7 @@
 
 module AST where
 
-data NumericOp = Add | Subtract | Multiply | Divide deriving (Eq, Show)
+data NumericOp = Add | Subtract | Multiply | Divide | Modulus | Exponentiate | NNExponentiate deriving (Eq, Show)
 data CompOp = LessThan | GreaterThan | LessThanOrEqual | GreaterThanOrEqual | Equal | NotEqual deriving (Eq, Show)
 
 data SExp a where
@@ -19,6 +19,7 @@ data SExp a where
   SIdAssign :: String -> SExp a -> SExp a -> SExp a
   SIf :: SExp a -> SExp a -> SExp a -> SExp a
   SFunc :: String -> [SExp a] -> SExp a
+  SList :: [SExp a] -> SExp a
   SVal :: a -> SExp a
   deriving (Show, Eq)
 

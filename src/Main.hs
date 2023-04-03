@@ -28,7 +28,7 @@ banner = do
     putStrLn ""
 
 -- Lumi Repl
-repl :: (Fractional a, Ord a, Show a) => Env a -> IO ()
+repl :: (Fractional a, Ord a, Show a, Floating a) => Env a -> IO ()
 repl env = runInputT defaultSettings l
   where l = do p <- getInputLine "lumi> "
                case p of
