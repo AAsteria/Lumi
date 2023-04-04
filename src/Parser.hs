@@ -115,11 +115,20 @@ arOperators =
    , C.InfixL (SBoolOp "&&" <$ symbol "&&") ]
   ]
 
+parsePrint :: Parser (SExp a)
+parsePrint = do
+    rword "print"
+    SPrint <$> mmvp
+
+parsePrintln :: Parser (SExp a)
+parsePrintln = do
+    rword "println"
+    SPrintln <$> mmvp
 
 -- usage: parseTest mmvp "if 5 < 8 then Add 2 3; else Add 3 5; ;"
 -- if 3 > 8 then 5/6 else 2*8.5;
 parseIfElse :: Parser (SExp a)
-parseIfElse = do 
+parseIfElse = do
   rword "if"
   c <- mmvp
   rword "then"
@@ -161,6 +170,8 @@ parseFunc = do
 -- usage: parseTest mvp " "
 mvp :: Parser (SExp a)
 mvp = SNumeric <$> numeric
+   <|> parsePrintln
+   <|> parsePrint
    <|> bool
    <|> SString <$> str
    <|> parseIfElse

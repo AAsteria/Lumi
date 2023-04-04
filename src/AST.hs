@@ -2,6 +2,8 @@
 
 module AST where
 
+import qualified Data.Map as Map
+
 data NumericOp = Add | Subtract | Multiply | Divide | Modulus | Exponentiate | NNExponentiate deriving (Eq, Show)
 data CompOp = LessThan | GreaterThan | LessThanOrEqual | GreaterThanOrEqual | Equal | NotEqual deriving (Eq, Show)
 
@@ -21,6 +23,8 @@ data SExp a where
   SWhile :: SExp a -> SExp a -> SExp a -> SExp a
   SFunc :: String -> [SExp a] -> SExp a
   SList :: [SExp a] -> SExp a
+  SPrint :: SExp a -> SExp a
+  SPrintln :: SExp a -> SExp a
   SVal :: a -> SExp a
   deriving (Show, Eq)
 
@@ -31,3 +35,6 @@ emptyEnv = []
 
 addToEnv :: String -> SExp a -> Env a -> Env a
 addToEnv k v env = (k, v) : env
+
+lookupEnv :: String -> Map.Map String (SExp a) -> Maybe (SExp a)
+lookupEnv = Map.lookup

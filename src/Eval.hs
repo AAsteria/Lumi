@@ -176,7 +176,14 @@ eval (SIf e1 e2 e3) env =
     SBool True -> eval e2 env
     _ -> eval e3 env
 
+eval (SPrint exp) env =
+  let val = eval exp env
+  in SString $ show val
 
+eval (SPrintln exp) env =
+  let val = eval exp env
+  in SString (show val ++ "\n")
+    
 -- TODO: Eval function for SFunc
 
 liftBoolOp :: (Bool -> Bool -> Bool) -> SExp a -> SExp a -> Bool
