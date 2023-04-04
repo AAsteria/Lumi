@@ -174,6 +174,7 @@ mvp = SNumeric <$> numeric
    <|> parsePrint
    <|> bool
    <|> SString <$> str
+   <|> SList <$> list
    <|> parseIfElse
    <|> assign
    <|> parseFunc
