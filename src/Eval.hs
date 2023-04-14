@@ -131,6 +131,7 @@ boolOps :: [(String, Bool -> Bool -> Bool)]
 boolOps = [ ("&&",(&&))
           , ("||",(||))]
 
+-- Evaluation functions for SExp
 eval :: (Fractional a, Ord a, Show a, Floating a) => SExp a -> Env a -> SExp a
 eval (SNumeric i) _ = SNumeric i
 eval (SBool b) _ = SBool b
@@ -197,3 +198,6 @@ liftNumericOp f _ _ = SInteger 0
 liftCompOp :: (SExp a -> SExp a -> Bool) -> SExp a -> SExp a -> Bool
 liftCompOp f (SNumeric i1) (SNumeric i2) = f i1 i2
 liftCompOp f _ _ = False
+
+-- Execution functions for Stmt
+-- exec :: Stmt -> Env -> Env

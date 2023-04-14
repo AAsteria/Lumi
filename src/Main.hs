@@ -40,6 +40,23 @@ repl env = runInputT defaultSettings l
                                        Right exp -> outputStrLn (show $ eval exp env)
                                        Left err -> outputStrLn (show err)
                                      l
+-- repl env = runInputT defaultSettings l
+--   where l = do
+--             p <- getInputLine "lumi> "
+--             case p of
+--               Nothing -> pure ()
+--               Just "exit" -> pure ()
+--               Just "quit" -> pure ()
+--               Just "" -> l
+--               Just input ->
+--                 case parse stmt "<stdin>" input of
+--                   Right stmt' -> do
+--                     let env' = evalStmt stmt' env -- TODO: evalStmt undefined! Parser works.
+--                     outputStrLn (show env')
+--                     l
+--                   Left err -> do
+--                     outputStrLn (show err)
+--                     l
 
 main :: IO ()
 main = do

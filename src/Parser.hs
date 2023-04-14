@@ -12,6 +12,7 @@ import Language.Haskell.TH
 import Control.Monad (void)
 import Control.Monad.Combinators.Expr as C
 import GHC.Read (paren)
+import qualified Data.Maybe
 
 type Parser = Parsec Void String
 
@@ -159,17 +160,24 @@ assign = do
   rword "end"
   return $ SIdAssign v e1 e2
 
+-- !!!!!MESSY CODE PLEASE DON‘T USE!!!!!
+-- MAY NEED TO DEFINE APPLY and other things FIRST???
 parseFunc :: Parser (SExp a)
 parseFunc = do
-  funcName <- identifier
-  args <- many (space *> mmvp)
-  symbol ";"
-  return $ SFunc funcName args
+  rword "def"
+  fname <- identifier
+  args <- parens (identifier `sepBy` symbol ",")
+  symbol ":"
+  body <- sexp `sepEndBy` symbol ";"
+  rword "return"
+  ret <- parens (sexp `sepBy` symbol ",")
+  pure $ SFunc fname args (SList (body ++ [SList (SString "return" : ret)]))
 
 -- Parser to represent expression variants
--- usage: parseTest mvp " "
+-- usage: parseTest mmvp " "
 mvp :: Parser (SExp a)
 mvp = SNumeric <$> numeric
+   <|> parseFunc
    <|> parsePrintln
    <|> parsePrint
    <|> bool
@@ -177,12 +185,56 @@ mvp = SNumeric <$> numeric
    <|> SList <$> list
    <|> parseIfElse
    <|> assign
-   <|> parseFunc
    <|> SId <$> identifier
    <|> parens mmvp
 
 mmvp :: Parser (SExp a)
-mmvp = label "expression" $ makeExprParser mvp arOperators
+mmvp = label "expression" $ makeExprParser mvp arOperators 
+
+braces :: Parser a -> Parser a
+braces p = label "braces" $ do
+  symbol "{"
+  x <- p
+  symbol "}"
+  return x
+
+-- Stmt
+blockStmt :: Parser (AST.Stmt a)
+blockStmt = label "block statement" $ do
+  stmts <- braces (many stmt)
+  return $ Block stmts
+
+stmt :: Parser (AST.Stmt a)
+stmt = assignStmt
+    <|> ifStmt
+    <|> funDeclStmt
+    <|> returnStmt
+    <|> try blockStmt
+
+assignStmt :: Parser (AST.Stmt a)
+assignStmt = label "assignment statement" $ do
+    i <- try $ identifier <* symbol "="
+    Assign i <$> (mmvp :: Parser (SExp Int))
+
+ifStmt :: Parser (AST.Stmt a)
+ifStmt = label "if statement" $ do
+    symbol "if"
+    cond <- sexp
+    thenBranch <- blockStmt
+    elseBranch <- optional (symbol "else" *> blockStmt)
+    return $ IfStmt cond thenBranch (Data.Maybe.fromMaybe (Block []) elseBranch)
+
+funDeclStmt :: Parser (AST.Stmt a)
+funDeclStmt = label "function declaration statement" $ do
+  symbol "def"
+  name <- identifier
+  args <- parens (identifier `sepBy` symbol ",")
+  FunDecl name args <$> blockStmt
+
+returnStmt :: Parser (AST.Stmt a)
+returnStmt = label "return statement" $ do
+    symbol "return"
+    Return <$> mmvp
 
 -- Parser helper function
 -- usage: case parses "   5.5" of { Left e -> putStrLn e; Right r -> print r }
