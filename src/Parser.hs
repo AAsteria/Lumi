@@ -10,6 +10,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Scientific
 import Language.Haskell.TH
 import Control.Monad (void)
+
 import Control.Monad.Combinators.Expr as C
 import GHC.Read (paren)
 import qualified Data.Maybe
@@ -126,71 +127,6 @@ parsePrintln = do
     rword "println"
     SPrintln <$> mmvp
 
--- usage: parseTest mmvp "if 5 < 8 then Add 2 3; else Add 3 5; ;"
--- if 3 > 8 then 5/6 else 2*8.5;
-parseIfElse :: Parser (SExp a)
-parseIfElse = do
-  rword "if"
-  c <- mmvp
-  rword "then"
-  e1 <- mmvp
-  rword "else"
-  e2 <- mmvp
-  symbol ";"
-  return $ SIf c e1 e2
-
--- parseWhile :: Parser (SExp a)
--- parseWhile = do 
---   rword "while"
---   cond <- mmvp
---   rword "do"
---   block <- many mmvp
---   rword "end"
---   return $ SWhile cond (SList block) (SBool True)
-
--- when x = 6.5 eval 8.8 + x + 2*x end
-assign :: Parser (SExp a)
-assign = do
-  rword "when"
-  v <- identifier
-  symbol "="
-  e1 <- mmvp
-  rword "eval"
-  e2 <- mmvp
-  rword "end"
-  return $ SIdAssign v e1 e2
-
--- !!!!!MESSY CODE PLEASE DON‘T USE!!!!!
--- MAY NEED TO DEFINE APPLY and other things FIRST???
-parseFunc :: Parser (SExp a)
-parseFunc = do
-  rword "def"
-  fname <- identifier
-  args <- parens (identifier `sepBy` symbol ",")
-  symbol ":"
-  body <- sexp `sepEndBy` symbol ";"
-  rword "return"
-  ret <- parens (sexp `sepBy` symbol ",")
-  pure $ SFunc fname args (SList (body ++ [SList (SString "return" : ret)]))
-
--- Parser to represent expression variants
--- usage: parseTest mmvp " "
-mvp :: Parser (SExp a)
-mvp = SNumeric <$> numeric
-   <|> parseFunc
-   <|> parsePrintln
-   <|> parsePrint
-   <|> bool
-   <|> SString <$> str
-   <|> SList <$> list
-   <|> parseIfElse
-   <|> assign
-   <|> SId <$> identifier
-   <|> parens mmvp
-
-mmvp :: Parser (SExp a)
-mmvp = label "expression" $ makeExprParser mvp arOperators 
-
 braces :: Parser a -> Parser a
 braces p = label "braces" $ do
   symbol "{"
@@ -204,18 +140,13 @@ blockStmt = label "block statement" $ do
   stmts <- braces (many stmt)
   return $ Block stmts
 
-stmt :: Parser (AST.Stmt a)
-stmt = assignStmt
-    <|> ifStmt
-    <|> funDeclStmt
-    <|> returnStmt
-    <|> try blockStmt
-
+-- usage: parseTest stmt "a = 2.5"
 assignStmt :: Parser (AST.Stmt a)
 assignStmt = label "assignment statement" $ do
     i <- try $ identifier <* symbol "="
-    Assign i <$> (mmvp :: Parser (SExp Int))
+    Assign i <$> mmvp
 
+-- usage: parseTest stmt "if (3<5.5) {return True} else {return False}"
 ifStmt :: Parser (AST.Stmt a)
 ifStmt = label "if statement" $ do
     symbol "if"
@@ -224,6 +155,7 @@ ifStmt = label "if statement" $ do
     elseBranch <- optional (symbol "else" *> blockStmt)
     return $ IfStmt cond thenBranch (Data.Maybe.fromMaybe (Block []) elseBranch)
 
+-- usage: parseTest stmt "def myFunc(a,b) {return 1}"
 funDeclStmt :: Parser (AST.Stmt a)
 funDeclStmt = label "function declaration statement" $ do
   symbol "def"
@@ -233,7 +165,7 @@ funDeclStmt = label "function declaration statement" $ do
 
 returnStmt :: Parser (AST.Stmt a)
 returnStmt = label "return statement" $ do
-    symbol "return"
+    rword "return"
     Return <$> mmvp
 
 -- Parser helper function
@@ -249,3 +181,34 @@ parses input =
   case result of
     Left err -> Left $ errorBundlePretty err
     Right res -> Right res
+
+-- ============================================================
+-- =====================< CORE PARSER >========================
+-- ============================================================
+-- Parser for statements
+-- usage: parseTest stmt "return 6+6"
+-- parseTest stmt "if (3<5.5) {return True} else {return False}"
+stmt :: Parser (AST.Stmt a)
+stmt = assignStmt
+    <|> ifStmt
+    <|> funDeclStmt
+    <|> returnStmt
+    <|> try blockStmt
+
+-- Parser for expression variants
+mvp :: Parser (SExp a)
+mvp = SStmt <$> stmt
+   <|> SNumeric <$> numeric
+   <|> parsePrintln
+   <|> parsePrint
+   <|> bool
+   <|> SString <$> str
+   <|> SList <$> list
+   <|> SId <$> identifier
+   <|> parens mmvp
+
+mmvp :: Parser (SExp a)
+mmvp = label "expression" $ makeExprParser mvp arOperators
+-- ============================================================
+-- =====================< CORE PARSER >========================
+-- ============================================================

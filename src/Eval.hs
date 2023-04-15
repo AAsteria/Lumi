@@ -12,6 +12,7 @@ import Data.Typeable
 import GHC.Generics
 import Data.Foldable (toList)
 import Data.Maybe
+import qualified AST as Map
 
 simplify :: (Fractional a, Integral a) => SExp a -> SExp a
 simplify (SInteger x) = SInteger x
@@ -199,5 +200,47 @@ liftCompOp :: (SExp a -> SExp a -> Bool) -> SExp a -> SExp a -> Bool
 liftCompOp f (SNumeric i1) (SNumeric i2) = f i1 i2
 liftCompOp f _ _ = False
 
--- Execution functions for Stmt
--- exec :: Stmt -> Env -> Env
+-- Evaluation functions for Stmt
+-- TODO: Combine evalStmt and eval functions to use in Main.hs (repl)
+evalStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> Stmt a -> IO (Maybe a, Env a)
+evalStmt env (Block stmts) = evalBlock env stmts
+evalStmt env (Assign var val) = do
+  let val' = eval val env
+  return (Nothing, addToEnv var val' env)
+evalStmt env (IfStmt cond tr fl) = evalIfStmt env cond tr fl
+evalStmt env (FunDecl name args body) = evalFunDecl env name args body
+evalStmt env (Return val) = do
+  let val' = eval val env
+  case val' of
+    SVal v -> return (Just v, env)
+    _ -> return (Nothing, env)
+
+evalBlock :: (Fractional a, Ord a, Show a, Floating a) => Env a -> [Stmt a] -> IO (Maybe a, Env a)
+evalBlock env [] = return (Nothing, env)
+evalBlock env (stmt:stmts) = do
+  (val, env') <- evalStmt env stmt
+  case val of
+    Just v -> return (Just v, env')
+    Nothing -> evalBlock env' stmts
+
+evalIfStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> SExp a -> Stmt a -> Stmt a -> IO (Maybe a, Env a)
+evalIfStmt env condStmt thenStmt elseStmt = do
+  let cond = eval condStmt env
+  case cond of
+    SBool True -> evalStmt env thenStmt
+    SBool False -> evalStmt env elseStmt
+    _ -> return (Nothing, env)
+
+evalFunDecl :: (Ord a, Show a, Floating a) => Env a -> String -> [String] -> Stmt a -> IO (Maybe a, Env a)
+evalFunDecl env name args body = do
+  let closure = SClosure env args (stmtToSExp body)
+  let newEnv = addToEnv name closure env
+  return (Nothing, newEnv)
+
+stmtToSExp :: (Ord a, Show a, Floating a) => Stmt a -> SExp a
+stmtToSExp (Block stmts) = SList (map stmtToSExp stmts)
+stmtToSExp (IfStmt cond thenStmt elseStmt) =
+  SIf cond (stmtToSExp thenStmt) (stmtToSExp elseStmt)
+stmtToSExp (FunDecl name args body) = SFunc name args (stmtToSExp body)
+stmtToSExp (Return sexp) = SSExp (SId "return") [sexp]
+stmtToSExp (Assign var val) = SIdAssign var (eval val emptyEnv) (SId var)

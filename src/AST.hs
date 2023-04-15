@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, InstanceSigs #-}
+{-# LANGUAGE GADTs #-}
 
 module AST where
 
@@ -27,34 +27,17 @@ data SExp a where
   SPrint :: SExp a -> SExp a
   SPrintln :: SExp a -> SExp a
   SVal :: a -> SExp a
+  SClosure :: Env a -> [String] -> SExp a -> SExp a
+  SStmt :: Stmt a -> SExp a
   deriving (Show, Eq)
 
 data Stmt a where
   Block :: [Stmt a] -> Stmt a
-  Assign :: Show a => String -> SExp a -> Stmt b
+  Assign :: String -> SExp a -> Stmt a
   IfStmt :: SExp a -> Stmt a -> Stmt a -> Stmt a
   FunDecl :: String -> [String] -> Stmt a -> Stmt a
   Return :: SExp a -> Stmt a
-
-instance Show a => Show (Stmt a) where
-  show (Block stmts) = "{ " ++ intercalate "; " (map show stmts) ++ " }"
-  show (Assign var sexp) = var ++ " = " ++ show sexp
-  show (IfStmt cond thenStmt elseStmt) =
-    "if " ++ show cond ++ " then " ++ show thenStmt ++ " else " ++ show elseStmt
-  show (FunDecl name args body) =
-    "function " ++ name ++ "(" ++ intercalate ", " args ++ ") { " ++ show body ++ " }"
-  show (Return sexp) = "return " ++ show sexp
-
-instance Eq a => Eq (Stmt a) where
-  (==) :: Eq a => Stmt a -> Stmt a -> Bool
-  Block stmts1 == Block stmts2 = stmts1 == stmts2
-  Assign id1 _ == Assign id2 _ = id1 == id2
-  IfStmt cond1 then1 else1 == IfStmt cond2 then2 else2 =
-    cond1 == cond2 && then1 == then2 && else1 == else2
-  FunDecl name1 args1 body1 == FunDecl name2 args2 body2 =
-    name1 == name2 && args1 == args2 && body1 == body2
-  Return exp1 == Return exp2 = exp1 == exp2
-  _ == _ = False
+  deriving (Show, Eq)
 
 type Env a = [(String, SExp a)]
 
