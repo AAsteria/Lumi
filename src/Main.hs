@@ -4,7 +4,7 @@ import AST
 import Eval
 
 import System.Console.ANSI
-import Options.Applicative
+import Options.Applicative as OA
 import Data.Semigroup ((<>))
 import System.IO
 import Prelude hiding (lookup)
@@ -17,11 +17,8 @@ import Control.Monad.State
 import qualified Data.Functor
 import System.FilePath
 import System.Process
-import Control.Monad.Trans.Except (ExceptT, runExceptT)
-import Control.Monad.Except (runExceptT, liftIO)
-import System.Directory (doesFileExist)
-import qualified Data.Text.IO as TIO
-import Data.Text as T
+import System.Directory.Internal.Prelude
+import System.Exit
 
 data Opts = Opts
     { optFlag :: !Bool
@@ -52,10 +49,17 @@ repl env = runInputT defaultSettings l
 -- Lumi Interpreter
 interpretFile :: (Fractional a, Ord a, Show a, Floating a) => FilePath -> Env a -> IO ()
 interpretFile filePath env = do
-  input <- readFile filePath
+  input <- catch (readFile filePath) handler
   case parse mmvp filePath input of
     Left err -> print err
     Right exp -> print $ eval exp env
+  where
+    handler :: IOError -> IO String
+    handler e
+      | isDoesNotExistError e = do
+          putStrLn $ "Error: file not found: " ++ filePath
+          exitWith $ ExitFailure 1
+      | otherwise = ioError e
 
 main :: IO ()
 main = do
@@ -67,7 +71,7 @@ main = do
     Repl _ -> repl []
   putStrLn ""
   where
-    optsParser = info (helper <*> versionOption <*> commandParser) fullDesc
+    optsParser = info (helper <*> versionOption <*> commandParser <|> pure (Repl [])) fullDesc
     versionOption = infoOption "Version 0.0.1" (long "version" <> help "Show current version")
 
 data LumiOpts
@@ -77,7 +81,7 @@ data LumiOpts
 
 lumiInterpreter :: FilePath -> [String] -> IO ()
 lumiInterpreter source args = do
-  putStrLn $ "Compiling " ++ source ++ " with args " ++ show args
+  putStrLn $ "Compiling " ++ source ++ " with args " ++ show args ++ "..."
 
 lumiCompiler :: FilePath -> FilePath -> IO ()
 lumiCompiler source output = do
@@ -86,22 +90,17 @@ lumiCompiler source output = do
   system $ "ghc " ++ source ++ " -o " ++ output'
   return ()
 
-commandParser :: Options.Applicative.Parser LumiOpts
+commandParser :: OA.Parser LumiOpts
 commandParser =
   hsubparser
-    ( command "interpret" (info lumiInterpreterParser (progDesc "Interpret Lumi source file"))
+    ( command "interp" (info lumiInterpreterParser (progDesc "Interpret Lumi source file"))
         <> command "compile" (info lumiCompilerParser (progDesc "Compile Lumi source file"))
-        <> command "repl" (info replParser (progDesc "Start Lumi REPL"))
     )
 
-lumiInterpreterParser :: Options.Applicative.Parser LumiOpts
+lumiInterpreterParser :: OA.Parser LumiOpts
 lumiInterpreterParser =
-  LumiInterpreter <$> argument Options.Applicative.str (metavar "SOURCE") <*> Options.Applicative.many (strOption (long "arg" <> metavar "ARG"))
+  LumiInterpreter <$> argument OA.str (metavar "SOURCE") <*> OA.many (strOption (long "arg" <> metavar "ARG"))
 
-lumiCompilerParser :: Options.Applicative.Parser LumiOpts
+lumiCompilerParser :: OA.Parser LumiOpts
 lumiCompilerParser =
-  LumiCompiler <$> argument Options.Applicative.str (metavar "SOURCE") <*> argument Options.Applicative.str (metavar "OUTPUT")
-
-replParser :: Options.Applicative.Parser LumiOpts
-replParser =
-  Repl <$> Options.Applicative.many ((,) <$> argument Options.Applicative.str (metavar "VAR") <*> (SVal () <$ pure ()))
+  LumiCompiler <$> argument OA.str (metavar "SOURCE") <*> argument OA.str (metavar "OUTPUT")
