@@ -50,3 +50,8 @@ executables:
     - template-haskell >= 1.14.0.0
     - ansi-terminal >= 0.11.4
     - containers >= 0.0.0.0
+    - filepath >= 0.0.0.0
+    - process >= 0.0.0.0
+    - text >= 0.0.0.0
+    - directory >= 0.0.0.0
+    - transformers >= 0.0.0.0
