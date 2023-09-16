@@ -201,10 +201,34 @@ liftCompOp f (SNumeric i1) (SNumeric i2) = f i1 i2
 liftCompOp f _ _ = False
 
 -- Evaluation functions for Stmt
+<<<<<<< Updated upstream
 -- TODO: Combine evalStmt and eval functions to use in Main.hs (repl)
 evalStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> Stmt a -> IO (Maybe a, Env a)
 evalStmt env (Block stmts) = evalBlock env stmts
 evalStmt env (Assign var val) = do
+=======
+-- TODO: Combine execStmt and eval functions to use in Main.hs (repl)
+execStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> Stmt a -> IO (Maybe String, Env a)
+execStmt env (SeqStmt []) = return (Nothing, env)
+execStmt env (SeqStmt (st:sts)) = do
+  (i1, env1) <- execStmt env st
+  (i2, env2) <- execStmt env1 (SeqStmt sts)
+  return (combine i1 i2, env2)
+  where
+    combine Nothing b = b
+    combine a Nothing = a
+    combine (Just a) (Just b) = Just (a ++ "\n" ++ b)
+
+
+  -- Added new combine function
+  -- where
+  --   combine :: Maybe a -> Maybe a -> Maybe a
+  --   combine Nothing b        = b
+  --   combine a        Nothing = a
+  --   combine _        b        = b
+
+execStmt env (Assign var val) = do
+>>>>>>> Stashed changes
   let val' = eval val env
   return (Nothing, addToEnv var val' env)
 evalStmt env (IfStmt cond tr fl) = evalIfStmt env cond tr fl
