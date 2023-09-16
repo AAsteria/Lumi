@@ -39,20 +39,6 @@ banner = do
     putStrLn ""
 
 -- Lumi Repl
-<<<<<<< Updated upstream
-repl :: (Fractional a, Ord a, Show a, Floating a) => Env a -> IO ()
-repl env = runInputT defaultSettings l
-  where l = do p <- getInputLine "lumi> "
-               case p of
-                    Nothing -> pure ()
-                    Just "exit" -> pure ()
-                    Just "quit" -> pure ()
-                    Just "" -> l
-                    Just input -> do case parse mmvp "<stdin>" input of -- mmvp and stmt
-                                       Right exp -> outputStrLn (show $ eval exp env)
-                                       Left err -> outputStrLn (show err)
-                                     l
-=======
 repl :: (Fractional a, Ord a, Show a, Floating a) => Env a -> InputT IO ()
 repl env = do
     input <- getInputLine "Lumi> "
@@ -75,7 +61,6 @@ repl env = do
                 Left err -> do
                     outputStrLn (errorBundlePretty err)
                     repl env
->>>>>>> Stashed changes
 
 -- Lumi Interpreter
 interpretFile :: (Fractional a, Ord a, Show a, Floating a) => FilePath -> Env a -> IO ()
@@ -134,8 +119,4 @@ lumiInterpreterParser =
 
 lumiCompilerParser :: OA.Parser LumiOpts
 lumiCompilerParser =
-<<<<<<< Updated upstream
-  LumiCompiler <$> argument OA.str (metavar "SOURCE") <*> argument OA.str (metavar "OUTPUT")
-=======
     LumiCompiler <$> argument OA.str (metavar "SOURCE") <*> argument OA.str (metavar "OUTPUT")
->>>>>>> Stashed changes

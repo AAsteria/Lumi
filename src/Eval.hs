@@ -159,7 +159,8 @@ eval (SBoolOp op e1 e2) env =
 eval (SId var) env =
   case lookup var env of
     Just val -> val
-    Nothing -> SInteger 0
+    --Added err message when env lookup failed
+    Nothing -> error $ "Variable not found in environment: " ++ var
 
 eval (SIdAssign var e1 e2) env =
   let v1 = eval e1 env
@@ -178,14 +179,6 @@ eval (SIf e1 e2 e3) env =
     SBool True -> eval e2 env
     _ -> eval e3 env
 
-eval (SPrint exp) env =
-  let val = eval exp env
-  in SString $ show val
-
-eval (SPrintln exp) env =
-  let val = eval exp env
-  in SString (show val ++ "\n")
-    
 -- TODO: Eval function for SFunc
 
 liftBoolOp :: (Bool -> Bool -> Bool) -> SExp a -> SExp a -> Bool
@@ -201,12 +194,6 @@ liftCompOp f (SNumeric i1) (SNumeric i2) = f i1 i2
 liftCompOp f _ _ = False
 
 -- Evaluation functions for Stmt
-<<<<<<< Updated upstream
--- TODO: Combine evalStmt and eval functions to use in Main.hs (repl)
-evalStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> Stmt a -> IO (Maybe a, Env a)
-evalStmt env (Block stmts) = evalBlock env stmts
-evalStmt env (Assign var val) = do
-=======
 -- TODO: Combine execStmt and eval functions to use in Main.hs (repl)
 execStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> Stmt a -> IO (Maybe String, Env a)
 execStmt env (SeqStmt []) = return (Nothing, env)
@@ -219,50 +206,50 @@ execStmt env (SeqStmt (st:sts)) = do
     combine a Nothing = a
     combine (Just a) (Just b) = Just (a ++ "\n" ++ b)
 
-
-  -- Added new combine function
-  -- where
-  --   combine :: Maybe a -> Maybe a -> Maybe a
-  --   combine Nothing b        = b
-  --   combine a        Nothing = a
-  --   combine _        b        = b
-
 execStmt env (Assign var val) = do
->>>>>>> Stashed changes
   let val' = eval val env
   return (Nothing, addToEnv var val' env)
-evalStmt env (IfStmt cond tr fl) = evalIfStmt env cond tr fl
-evalStmt env (FunDecl name args body) = evalFunDecl env name args body
-evalStmt env (Return val) = do
+execStmt env (IfStmt cond tr fl) = execIfStmt env cond tr fl
+execStmt env (FunDecl name args body) = execFunDecl env name args body
+execStmt env (Return val) = do
   let val' = eval val env
   case val' of
-    SVal v -> return (Just v, env)
+    SVal v -> return (Just $ show v, env)
     _ -> return (Nothing, env)
 
-evalBlock :: (Fractional a, Ord a, Show a, Floating a) => Env a -> [Stmt a] -> IO (Maybe a, Env a)
-evalBlock env [] = return (Nothing, env)
-evalBlock env (stmt:stmts) = do
-  (val, env') <- evalStmt env stmt
-  case val of
-    Just v -> return (Just v, env')
-    Nothing -> evalBlock env' stmts
+execStmt env (SPrint exp) =
+  let val = eval exp env
+  in return (Just $ show val, env)
 
-evalIfStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> SExp a -> Stmt a -> Stmt a -> IO (Maybe a, Env a)
-evalIfStmt env condStmt thenStmt elseStmt = do
+execStmt env (SPrintln exp) =
+  let val = eval exp env
+  in return (Just $ show val ++ "\n", env)
+    
+-- evalBlock :: (Fractional a, Ord a, Show a, Floating a) => Env a -> [Stmt a] -> IO (Maybe a, Env a)
+-- evalBlock env [] = return (Nothing, env)
+-- evalBlock env (stmt:stmts) = do
+--   (val, env') <- execStmt env stmt
+--   case val of
+--     Just v -> return (Just v, env')
+--     Nothing -> evalBlock env' stmts
+
+execIfStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> SExp a -> Stmt a -> Stmt a -> IO (Maybe String, Env a)
+execIfStmt env condStmt thenStmt elseStmt = do
   let cond = eval condStmt env
   case cond of
-    SBool True -> evalStmt env thenStmt
-    SBool False -> evalStmt env elseStmt
+    SBool True -> execStmt env thenStmt
+    SBool False -> execStmt env elseStmt
     _ -> return (Nothing, env)
 
-evalFunDecl :: (Ord a, Show a, Floating a) => Env a -> String -> [String] -> Stmt a -> IO (Maybe a, Env a)
-evalFunDecl env name args body = do
+execFunDecl :: (Ord a, Show a, Floating a) => Env a -> String -> [String] -> Stmt a -> IO (Maybe String, Env a)
+execFunDecl env name args body = do
   let closure = SClosure env args (stmtToSExp body)
   let newEnv = addToEnv name closure env
   return (Nothing, newEnv)
 
 stmtToSExp :: (Ord a, Show a, Floating a) => Stmt a -> SExp a
-stmtToSExp (Block stmts) = SList (map stmtToSExp stmts)
+-- stmtToSExp (Block stmts) = SList (map stmtToSExp stmts)
+stmtToSExp (SeqStmt stmts) = SList (map stmtToSExp stmts)
 stmtToSExp (IfStmt cond thenStmt elseStmt) =
   SIf cond (stmtToSExp thenStmt) (stmtToSExp elseStmt)
 stmtToSExp (FunDecl name args body) = SFunc name args (stmtToSExp body)

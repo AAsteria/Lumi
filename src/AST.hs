@@ -24,15 +24,17 @@ data SExp a where
   SWhile :: SExp a -> SExp a -> SExp a -> SExp a
   SFunc :: String -> [String] -> SExp a -> SExp a
   SList :: [SExp a] -> SExp a
-  SPrint :: SExp a -> SExp a
-  SPrintln :: SExp a -> SExp a
   SVal :: a -> SExp a
   SClosure :: Env a -> [String] -> SExp a -> SExp a
   SStmt :: Stmt a -> SExp a
   deriving (Show, Eq)
 
 data Stmt a where
-  Block :: [Stmt a] -> Stmt a
+  -- Block :: [Stmt a] -> Stmt a
+  -- Added the SeqStmt constructor
+  SeqStmt :: [Stmt a] -> Stmt a
+  SPrint :: SExp a -> Stmt a
+  SPrintln :: SExp a -> Stmt a
   Assign :: String -> SExp a -> Stmt a
   IfStmt :: SExp a -> Stmt a -> Stmt a -> Stmt a
   FunDecl :: String -> [String] -> Stmt a -> Stmt a

@@ -69,16 +69,16 @@ identifier = label "identifier" $ lexerSpace $ do
     -- else if ident `elem` gwd
     --   then MODE =< "SYMBOL" -- Apply Assign Function when available
       else pure ident
+      
+-- sexp :: Parser (SExp a)
+-- sexp = label "s-expression" $ lexerSpace $
+--   between (lexerSpace (char '(')) (char ')') (sexp' <$> mmvp <*> many mmvp)
 
-sexp :: Parser (SExp a)
-sexp = label "s-expression" $ lexerSpace $
-  between (lexerSpace (char '(')) (char ')') (sexp' <$> mmvp <*> many mmvp)
-
-sexp' :: SExp a -> [SExp a] -> SExp a
-sexp' (SId _) [] = error "Identifier must be followed by an expression"
-sexp' (SId ident) args = SSExp (SId ident) args
-sexp' exp [] = exp
-sexp' _ _ = error "Multiple expressions in a single s-expression are not supported"
+-- sexp' :: SExp a -> [SExp a] -> SExp a
+-- sexp' (SId _) [] = error "Identifier must be followed by an expression"
+-- sexp' (SId ident) args = SSExp (SId ident) args
+-- sexp' exp [] = exp
+-- sexp' _ _ = error "Multiple expressions in a single s-expression are not supported"
 
 skipSpace :: Parser ()
 skipSpace = L.space
@@ -117,28 +117,38 @@ arOperators =
    , C.InfixL (SBoolOp "&&" <$ symbol "&&") ]
   ]
 
-parsePrint :: Parser (SExp a)
+parsePrint :: Parser (AST.Stmt a)
 parsePrint = do
     rword "print"
     SPrint <$> mmvp
 
-parsePrintln :: Parser (SExp a)
+parsePrintln :: Parser (AST.Stmt a)
 parsePrintln = do
     rword "println"
     SPrintln <$> mmvp
 
-braces :: Parser a -> Parser a
-braces p = label "braces" $ do
-  symbol "{"
-  x <- p
-  symbol "}"
-  return x
+-- braces :: Parser a -> AST.Stmt a
+-- braces p = label "braces" $ do
+--   symbol "{"
+--   x <- p
+--   symbol "}"
+--   return $ SeqStmt x
 
 -- Stmt
-blockStmt :: Parser (AST.Stmt a)
-blockStmt = label "block statement" $ do
-  stmts <- braces (many stmt)
-  return $ Block stmts
+-- blockStmt :: Parser (AST.Stmt a)
+-- blockStmt = label "block statement" $ do
+--   stmts <- braces (many stmt)
+--   return $ Block stmts
+
+--Added SeqStmt, commented Block stmt
+-- sepBy (;) stmt
+-- e.g. { 4 + 4 ; print "hi"}
+seqStmt :: Parser (AST.Stmt a)
+seqStmt = label "sequence statement" $ do
+  symbol "{"
+  stmts <- sepBy stmt (symbol ";")
+  symbol "}"
+  return $ SeqStmt stmts
 
 -- usage: parseTest stmt "a = 2.5"
 assignStmt :: Parser (AST.Stmt a)
@@ -150,10 +160,14 @@ assignStmt = label "assignment statement" $ do
 ifStmt :: Parser (AST.Stmt a)
 ifStmt = label "if statement" $ do
     symbol "if"
-    cond <- sexp
-    thenBranch <- blockStmt
-    elseBranch <- optional (symbol "else" *> blockStmt)
-    return $ IfStmt cond thenBranch (Data.Maybe.fromMaybe (Block []) elseBranch)
+    cond <- mmvp
+    -- thenBranch <- blockStmt
+    -- elseBranch <- optional (symbol "else" *> blockStmt)
+    -- return $ IfStmt cond thenBranch (Data.Maybe.fromMaybe (Block []) elseBranch)
+    --Added: replaced block stmt with seq stmt
+    thenBranch <- seqStmt
+    elseBranch <- optional (symbol "else" *> seqStmt)
+    return $ IfStmt cond thenBranch (Data.Maybe.fromMaybe (SeqStmt []) elseBranch)
 
 -- usage: parseTest stmt "def myFunc(a,b) {return 1}"
 funDeclStmt :: Parser (AST.Stmt a)
@@ -161,7 +175,9 @@ funDeclStmt = label "function declaration statement" $ do
   symbol "def"
   name <- identifier
   args <- parens (identifier `sepBy` symbol ",")
-  FunDecl name args <$> blockStmt
+  -- FunDecl name args <$> blockStmt
+  --Added: replaced block stmt with seq stmt
+  FunDecl name args <$> seqStmt
 
 returnStmt :: Parser (AST.Stmt a)
 returnStmt = label "return statement" $ do
@@ -189,18 +205,20 @@ parses input =
 -- usage: parseTest stmt "return 6+6"
 -- parseTest stmt "if (3<5.5) {return True} else {return False}"
 stmt :: Parser (AST.Stmt a)
-stmt = assignStmt
-    <|> ifStmt
-    <|> funDeclStmt
-    <|> returnStmt
-    <|> try blockStmt
+stmt = -- assignStmt
+--     <|> ifStmt
+--     <|> funDeclStmt
+--     <|> returnStmt
+    parsePrint
+    -- <|> try blockStmt
+    --Added: replaced block stmt with seq stmt
+    <|> try seqStmt
+    
 
 -- Parser for expression variants
 mvp :: Parser (SExp a)
 mvp = SStmt <$> stmt
    <|> SNumeric <$> numeric
-   <|> parsePrintln
-   <|> parsePrint
    <|> bool
    <|> SString <$> str
    <|> SList <$> list
