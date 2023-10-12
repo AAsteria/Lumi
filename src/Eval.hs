@@ -162,9 +162,9 @@ eval (SId var) env =
     --Added err message when env lookup failed
     Nothing -> error $ "Variable not found in environment: " ++ var
 
-eval (SIdAssign var e1 e2) env =
-  let v1 = eval e1 env
-   in eval e2 (addToEnv var v1 env)
+-- eval (SIdAssign var e1) env =
+--   let v1 = eval e1 env
+--    in eval e2 (addToEnv var v1 env)
 
 eval (SList []) env = SList []  -- empty list evaluates to itself
 eval (SList (x:xs)) env =
@@ -210,7 +210,7 @@ execStmt env (Assign var val) = do
   let val' = eval val env
   return (Nothing, addToEnv var val' env)
 execStmt env (IfStmt cond tr fl) = execIfStmt env cond tr fl
-execStmt env (FunDecl name args body) = execFunDecl env name args body
+-- execStmt env (FunDecl name args body) = execFunDecl env name args body
 execStmt env (Return val) = do
   let val' = eval val env
   case val' of
@@ -224,7 +224,7 @@ execStmt env (SPrint exp) =
 execStmt env (SPrintln exp) =
   let val = eval exp env
   in return (Just $ show val ++ "\n", env)
-    
+
 -- evalBlock :: (Fractional a, Ord a, Show a, Floating a) => Env a -> [Stmt a] -> IO (Maybe a, Env a)
 -- evalBlock env [] = return (Nothing, env)
 -- evalBlock env (stmt:stmts) = do
@@ -241,17 +241,17 @@ execIfStmt env condStmt thenStmt elseStmt = do
     SBool False -> execStmt env elseStmt
     _ -> return (Nothing, env)
 
-execFunDecl :: (Ord a, Show a, Floating a) => Env a -> String -> [String] -> Stmt a -> IO (Maybe String, Env a)
-execFunDecl env name args body = do
-  let closure = SClosure env args (stmtToSExp body)
-  let newEnv = addToEnv name closure env
-  return (Nothing, newEnv)
+-- execFunDecl :: (Ord a, Show a, Floating a) => Env a -> String -> [String] -> Stmt a -> IO (Maybe String, Env a)
+-- execFunDecl env name args body = do
+--   let closure = SClosure env args (stmtToSExp body)
+--   let newEnv = addToEnv name closure env
+--   return (Nothing, newEnv)
 
-stmtToSExp :: (Ord a, Show a, Floating a) => Stmt a -> SExp a
--- stmtToSExp (Block stmts) = SList (map stmtToSExp stmts)
-stmtToSExp (SeqStmt stmts) = SList (map stmtToSExp stmts)
-stmtToSExp (IfStmt cond thenStmt elseStmt) =
-  SIf cond (stmtToSExp thenStmt) (stmtToSExp elseStmt)
-stmtToSExp (FunDecl name args body) = SFunc name args (stmtToSExp body)
-stmtToSExp (Return sexp) = SSExp (SId "return") [sexp]
-stmtToSExp (Assign var val) = SIdAssign var (eval val emptyEnv) (SId var)
+-- stmtToSExp :: (Ord a, Show a, Floating a) => Stmt a -> SExp a
+-- -- stmtToSExp (Block stmts) = SList (map stmtToSExp stmts)
+-- stmtToSExp (SeqStmt stmts) = SList (map stmtToSExp stmts)
+-- stmtToSExp (IfStmt cond thenStmt elseStmt) =
+--   SIf cond (stmtToSExp thenStmt) (stmtToSExp elseStmt)
+-- stmtToSExp (FunDecl name args body) = SFunc name args (stmtToSExp body)
+-- stmtToSExp (Return sexp) = SSExp (SId "return") [sexp]
+-- stmtToSExp (Assign var val) = Assign var val

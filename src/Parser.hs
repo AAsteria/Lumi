@@ -134,12 +134,6 @@ parsePrintln = do
 --   symbol "}"
 --   return $ SeqStmt x
 
--- Stmt
--- blockStmt :: Parser (AST.Stmt a)
--- blockStmt = label "block statement" $ do
---   stmts <- braces (many stmt)
---   return $ Block stmts
-
 --Added SeqStmt, commented Block stmt
 -- sepBy (;) stmt
 -- e.g. { 4 + 4 ; print "hi"}
@@ -205,11 +199,12 @@ parses input =
 -- usage: parseTest stmt "return 6+6"
 -- parseTest stmt "if (3<5.5) {return True} else {return False}"
 stmt :: Parser (AST.Stmt a)
-stmt = -- assignStmt
+stmt = assignStmt
 --     <|> ifStmt
 --     <|> funDeclStmt
 --     <|> returnStmt
-    parsePrint
+    <|> parsePrintln
+    <|> parsePrint
     -- <|> try blockStmt
     --Added: replaced block stmt with seq stmt
     <|> try seqStmt
