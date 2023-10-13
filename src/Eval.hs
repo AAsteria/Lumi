@@ -209,6 +209,7 @@ execStmt env (SeqStmt (st:sts)) = do
 execStmt env (Assign var val) = do
   let val' = eval val env
   return (Nothing, addToEnv var val' env)
+  
 execStmt env (IfStmt cond tr fl) = execIfStmt env cond tr fl
 -- execStmt env (FunDecl name args body) = execFunDecl env name args body
 execStmt env (Return val) = do

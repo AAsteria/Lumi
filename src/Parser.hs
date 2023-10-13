@@ -135,12 +135,14 @@ parsePrintln = do
 --   return $ SeqStmt x
 
 --Added SeqStmt, commented Block stmt
--- sepBy (;) stmt
+-- sepEndBy (;) stmt
+-- e.g. { 4 + 4 ; print "hi";}
 -- e.g. { 4 + 4 ; print "hi"}
 seqStmt :: Parser (AST.Stmt a)
 seqStmt = label "sequence statement" $ do
   symbol "{"
-  stmts <- sepBy stmt (symbol ";")
+  stmts <- stmt `sepEndBy` symbol ";"
+  optional (symbol ";")  -- Optional semicolon after the last statement
   symbol "}"
   return $ SeqStmt stmts
 
@@ -207,7 +209,7 @@ stmt = assignStmt
     <|> parsePrint
     -- <|> try blockStmt
     --Added: replaced block stmt with seq stmt
-    <|> try seqStmt
+    <|> try (seqStmt <* optional (symbol ";"))
     
 
 -- Parser for expression variants
