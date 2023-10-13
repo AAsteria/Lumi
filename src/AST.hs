@@ -29,8 +29,6 @@ data SExp a where
   deriving (Show, Eq)
 
 data Stmt a where
-  -- Block :: [Stmt a] -> Stmt a
-  -- Added the SeqStmt constructor
   SeqStmt :: [Stmt a] -> Stmt a
   SPrint :: SExp a -> Stmt a
   SPrintln :: SExp a -> Stmt a

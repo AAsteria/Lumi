@@ -49,9 +49,6 @@ repl env = do
         Just "" -> repl env
         Just inputStr -> do
             case parse stmt "<stdin>" inputStr of
-                -- mmvp and stmt
-                -- make expression to a statement
-                -- after assignment, check functions
                 Right exp -> do
                     (output, nuenv) <- liftIO $ execStmt env exp
                     case output of

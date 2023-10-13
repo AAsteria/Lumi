@@ -159,12 +159,7 @@ eval (SBoolOp op e1 e2) env =
 eval (SId var) env =
   case lookup var env of
     Just val -> val
-    --Added err message when env lookup failed
     Nothing -> error $ "Variable not found in environment: " ++ var
-
--- eval (SIdAssign var e1) env =
---   let v1 = eval e1 env
---    in eval e2 (addToEnv var v1 env)
 
 eval (SList []) env = SList []  -- empty list evaluates to itself
 eval (SList (x:xs)) env =

@@ -70,16 +70,6 @@ identifier = label "identifier" $ lexerSpace $ do
     --   then MODE =< "SYMBOL" -- Apply Assign Function when available
       else pure ident
       
--- sexp :: Parser (SExp a)
--- sexp = label "s-expression" $ lexerSpace $
---   between (lexerSpace (char '(')) (char ')') (sexp' <$> mmvp <*> many mmvp)
-
--- sexp' :: SExp a -> [SExp a] -> SExp a
--- sexp' (SId _) [] = error "Identifier must be followed by an expression"
--- sexp' (SId ident) args = SSExp (SId ident) args
--- sexp' exp [] = exp
--- sexp' _ _ = error "Multiple expressions in a single s-expression are not supported"
-
 skipSpace :: Parser ()
 skipSpace = L.space
     space1
@@ -136,8 +126,9 @@ parsePrintln = do
 
 --Added SeqStmt, commented Block stmt
 -- sepEndBy (;) stmt
--- e.g. { 4 + 4 ; print "hi";}
--- e.g. { 4 + 4 ; print "hi"}
+-- e.g. { print 1 ; print "hi";}
+-- e.g. { print 1 ; print "hi"}
+-- TODO: stmts separation without brackets
 seqStmt :: Parser (AST.Stmt a)
 seqStmt = label "sequence statement" $ do
   symbol "{"
@@ -157,9 +148,6 @@ ifStmt :: Parser (AST.Stmt a)
 ifStmt = label "if statement" $ do
     symbol "if"
     cond <- mmvp
-    -- thenBranch <- blockStmt
-    -- elseBranch <- optional (symbol "else" *> blockStmt)
-    -- return $ IfStmt cond thenBranch (Data.Maybe.fromMaybe (Block []) elseBranch)
     --Added: replaced block stmt with seq stmt
     thenBranch <- seqStmt
     elseBranch <- optional (symbol "else" *> seqStmt)
@@ -171,8 +159,6 @@ funDeclStmt = label "function declaration statement" $ do
   symbol "def"
   name <- identifier
   args <- parens (identifier `sepBy` symbol ",")
-  -- FunDecl name args <$> blockStmt
-  --Added: replaced block stmt with seq stmt
   FunDecl name args <$> seqStmt
 
 returnStmt :: Parser (AST.Stmt a)
@@ -207,8 +193,6 @@ stmt = assignStmt
 --     <|> returnStmt
     <|> parsePrintln
     <|> parsePrint
-    -- <|> try blockStmt
-    --Added: replaced block stmt with seq stmt
     <|> try (seqStmt <* optional (symbol ";"))
     
 
