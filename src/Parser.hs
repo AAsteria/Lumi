@@ -131,11 +131,11 @@ parsePrintln = do
 -- TODO: stmts separation without brackets
 seqStmt :: Parser (AST.Stmt a)
 seqStmt = label "sequence statement" $ do
-  symbol "{"
-  stmts <- stmt `sepEndBy` symbol ";"
-  optional (symbol ";")  -- Optional semicolon after the last statement
-  symbol "}"
-  return $ SeqStmt stmts
+    symbol "{"
+    statements <- stmt `sepEndBy` symbol ";"
+    optional (symbol ";")  -- handle the optional semicolon at the end
+    symbol "}"
+    return $ SeqStmt statements
 
 -- usage: parseTest stmt "a = 2.5"
 assignStmt :: Parser (AST.Stmt a)
@@ -186,14 +186,32 @@ parses input =
 -- Parser for statements
 -- usage: parseTest stmt "return 6+6"
 -- parseTest stmt "if (3<5.5) {return True} else {return False}"
-stmt :: Parser (AST.Stmt a)
-stmt = assignStmt
+
+singleStmt :: Parser (AST.Stmt a)
+singleStmt = assignStmt
 --     <|> ifStmt
 --     <|> funDeclStmt
 --     <|> returnStmt
     <|> parsePrintln
     <|> parsePrint
     <|> try (seqStmt <* optional (symbol ";"))
+    -- Add other individual statement parsers here, if you have more
+
+stmt :: Parser (AST.Stmt a)
+stmt = do
+    statements <- singleStmt `sepBy1` symbol ";"
+    return $ if length statements == 1
+                then head statements  -- if there's only one statement, return it directly
+                else SeqStmt statements  -- otherwise, return a sequence
+
+-- stmt :: Parser (AST.Stmt a)
+-- stmt = assignStmt
+-- --     <|> ifStmt
+-- --     <|> funDeclStmt
+-- --     <|> returnStmt
+--     <|> parsePrintln
+--     <|> parsePrint
+--     <|> try (seqStmt <* optional (symbol ";"))
     
 
 -- Parser for expression variants
