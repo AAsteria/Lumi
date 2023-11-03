@@ -8,7 +8,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Scientific
-import Language.Haskell.TH
+import Language.Haskell.TH ()
 import Control.Monad (void)
 
 import Control.Monad.Combinators.Expr as C
@@ -53,7 +53,7 @@ parens = between (symbol "(") (symbol ")")
 
 -- Reserved Words Dictionary
 rwd :: [String]
-rwd = ["if","else","in","False","True","OTHER","None","when","eval"
+rwd = ["if","else","in","False","True","OTHER","None","when","eval","return"
       ,"struct","for","do","MODE","NORMAL","SYMBOL"]
 
 rword :: String -> Parser ()
@@ -69,7 +69,7 @@ identifier = label "identifier" $ lexerSpace $ do
     -- else if ident `elem` gwd
     --   then MODE =< "SYMBOL" -- Apply Assign Function when available
       else pure ident
-      
+
 skipSpace :: Parser ()
 skipSpace = L.space
     space1
@@ -153,13 +153,20 @@ ifStmt = label "if statement" $ do
     elseBranch <- optional (symbol "else" *> seqStmt)
     return $ IfStmt cond thenBranch (Data.Maybe.fromMaybe (SeqStmt []) elseBranch)
 
--- usage: parseTest stmt "def myFunc(a,b) {return 1}"
-funDeclStmt :: Parser (AST.Stmt a)
-funDeclStmt = label "function declaration statement" $ do
-  symbol "def"
+-- usage: parseTest stmt "fun myadd(a,b) {print a+b}"
+procedureDeclStmt :: Parser (AST.Stmt a)
+procedureDeclStmt = do
+  rword "proc"
   name <- identifier
-  args <- parens (identifier `sepBy` symbol ",")
-  FunDecl name args <$> seqStmt
+  params <- parens (identifier `sepBy` symbol ",")
+  ProcDecl name params <$> seqStmt
+
+functionDeclStmt :: Parser (AST.Stmt a)
+functionDeclStmt = do
+  rword "fun"
+  name <- identifier
+  params <- parens (identifier `sepBy` symbol ",")
+  FuncDecl name params <$> seqStmt
 
 returnStmt :: Parser (AST.Stmt a)
 returnStmt = label "return statement" $ do
@@ -189,9 +196,10 @@ parses input =
 
 singleStmt :: Parser (AST.Stmt a)
 singleStmt = assignStmt
---     <|> ifStmt
---     <|> funDeclStmt
---     <|> returnStmt
+    -- <|> ifStmt
+    <|> procedureDeclStmt
+    <|> functionDeclStmt
+    <|> returnStmt
     <|> parsePrintln
     <|> parsePrint
     <|> try (seqStmt <* optional (symbol ";"))
@@ -203,16 +211,6 @@ stmt = do
     return $ if length statements == 1
                 then head statements  -- if there's only one statement, return it directly
                 else SeqStmt statements  -- otherwise, return a sequence
-
--- stmt :: Parser (AST.Stmt a)
--- stmt = assignStmt
--- --     <|> ifStmt
--- --     <|> funDeclStmt
--- --     <|> returnStmt
---     <|> parsePrintln
---     <|> parsePrint
---     <|> try (seqStmt <* optional (symbol ";"))
-    
 
 -- Parser for expression variants
 mvp :: Parser (SExp a)
