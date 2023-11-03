@@ -175,8 +175,8 @@ eval (SIf e1 e2 e3) env =
     _ -> eval e3 env
 
 -- TODO: Eval function for SFunc
-eval (SFunc name args body) env =
-  SClosure env args (SStmt body)
+eval (SFunctionCall name args) env = do
+  
 
 -- Add other cases for literals, operators, and conditionals as needed
 eval _ _ = error "Evaluation not implemented for this expression"

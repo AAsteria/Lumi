@@ -168,6 +168,12 @@ functionDeclStmt = do
   params <- parens (identifier `sepBy` symbol ",")
   FuncDecl name params <$> seqStmt
 
+functionCall :: Parser (SExp a)
+functionCall = do
+    name <- identifier
+    args <- parens (mmvp `sepBy` symbol ",")
+    return $ SFunctionCall name args
+
 returnStmt :: Parser (AST.Stmt a)
 returnStmt = label "return statement" $ do
     rword "return"
@@ -214,7 +220,8 @@ stmt = do
 
 -- Parser for expression variants
 mvp :: Parser (SExp a)
-mvp = SStmt <$> stmt
+mvp = try functionCall
+   <|> SStmt <$> stmt
    <|> SNumeric <$> numeric
    <|> bool
    <|> SString <$> str

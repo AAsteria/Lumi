@@ -22,6 +22,7 @@ data SExp a where
   SIf :: SExp a -> SExp a -> SExp a -> SExp a
   SWhile :: SExp a -> SExp a -> SExp a -> SExp a
   SFunc :: String -> [String] -> Stmt a -> SExp a
+  SFuncCall :: String -> [SExp a] -> SExp a --added
   SProcedure :: String -> [String] -> Stmt a -> SExp a
   SList :: [SExp a] -> SExp a
   SVal :: a -> SExp a
