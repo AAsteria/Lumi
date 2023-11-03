@@ -2,3 +2,4 @@ lumi.cabal
 stack.yaml.lock
 .stack-work
 .DS_Store
+lumi.bat
