@@ -23,7 +23,7 @@ data SExp a where
   SWhile :: SExp a -> SExp a -> SExp a -> SExp a
   SFunc :: String -> [String] -> Stmt a -> SExp a
   SFuncCall :: String -> [SExp a] -> SExp a --added
-  SProcedure :: String -> [String] -> Stmt a -> SExp a
+  -- SProcedure :: String -> [String] -> Stmt a -> SExp a
   SList :: [SExp a] -> SExp a
   SVal :: a -> SExp a
   SClosure :: Env a -> [String] -> SExp a -> SExp a
@@ -36,8 +36,9 @@ data Stmt a where
   SPrintln :: SExp a -> Stmt a
   Assign :: String -> SExp a -> Stmt a
   IfStmt :: SExp a -> Stmt a -> Stmt a -> Stmt a
-  ProcDecl :: String -> [String] -> Stmt a -> Stmt a
+  -- ProcDecl :: String -> [String] -> Stmt a -> Stmt a
   FuncDecl :: String -> [String] -> Stmt a -> Stmt a
+  CallStmt :: String -> [SExp a] -> Stmt a
   Return :: SExp a -> Stmt a
   deriving (Show, Eq)
 

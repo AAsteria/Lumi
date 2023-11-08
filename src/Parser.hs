@@ -5,6 +5,17 @@ import AST
 
 import Data.Void (Void)
 import Text.Megaparsec
+    ( optional,
+      (<|>),
+      parse,
+      errorBundlePretty,
+      between,
+      many,
+      sepBy,
+      sepBy1,
+      sepEndBy,
+      Parsec,
+      MonadParsec(label, takeWhileP, notFollowedBy, eof, try) )
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Scientific
@@ -154,25 +165,18 @@ ifStmt = label "if statement" $ do
     return $ IfStmt cond thenBranch (Data.Maybe.fromMaybe (SeqStmt []) elseBranch)
 
 -- usage: parseTest stmt "fun myadd(a,b) {print a+b}"
-procedureDeclStmt :: Parser (AST.Stmt a)
-procedureDeclStmt = do
-  rword "proc"
-  name <- identifier
-  params <- parens (identifier `sepBy` symbol ",")
-  ProcDecl name params <$> seqStmt
-
-functionDeclStmt :: Parser (AST.Stmt a)
-functionDeclStmt = do
-  rword "fun"
-  name <- identifier
-  params <- parens (identifier `sepBy` symbol ",")
-  FuncDecl name params <$> seqStmt
-
 functionCall :: Parser (SExp a)
 functionCall = do
     name <- identifier
     args <- parens (mmvp `sepBy` symbol ",")
-    return $ SFunctionCall name args
+    return $ SFuncCall name args
+
+functionDecl :: Parser (AST.Stmt a)
+functionDecl = do
+    rword "fun"
+    name <- identifier
+    params <- parens (identifier `sepBy` symbol ",")
+    FuncDecl name params <$> seqStmt
 
 returnStmt :: Parser (AST.Stmt a)
 returnStmt = label "return statement" $ do
@@ -202,26 +206,25 @@ parses input =
 
 singleStmt :: Parser (AST.Stmt a)
 singleStmt = assignStmt
-    -- <|> ifStmt
-    <|> procedureDeclStmt
-    <|> functionDeclStmt
+    <|> ifStmt
+    -- <|> procedureDeclStmt
+    <|> functionDecl
     <|> returnStmt
     <|> parsePrintln
     <|> parsePrint
     <|> try (seqStmt <* optional (symbol ";"))
-    -- Add other individual statement parsers here, if you have more
+
 
 stmt :: Parser (AST.Stmt a)
 stmt = do
     statements <- singleStmt `sepBy1` symbol ";"
     return $ if length statements == 1
-                then head statements  -- if there's only one statement, return it directly
-                else SeqStmt statements  -- otherwise, return a sequence
+                then head statements
+                else SeqStmt statements
 
 -- Parser for expression variants
 mvp :: Parser (SExp a)
-mvp = try functionCall
-   <|> SStmt <$> stmt
+mvp = SStmt <$> stmt
    <|> SNumeric <$> numeric
    <|> bool
    <|> SString <$> str

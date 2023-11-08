@@ -12,6 +12,7 @@ import Data.Typeable
 import GHC.Generics
 import Data.Foldable (toList)
 import Data.Maybe
+import Control.Monad (void)
 import qualified AST as Map
 
 simplify :: (Fractional a, Integral a) => SExp a -> SExp a
@@ -132,6 +133,11 @@ boolOps :: [(String, Bool -> Bool -> Bool)]
 boolOps = [ ("&&",(&&))
           , ("||",(||))]
 
+addToEnvList :: [String] -> [SExp a] -> Env a -> Env a
+addToEnvList [] _ env = env
+addToEnvList _ [] env = env
+addToEnvList (k:ks) (v:vs) env = addToEnvList ks vs (addToEnv k v env)
+
 -- Evaluation functions for SExp
 eval :: (Fractional a, Ord a, Show a, Floating a) => SExp a -> Env a -> SExp a
 eval (SNumeric i) _ = SNumeric i
@@ -174,13 +180,18 @@ eval (SIf e1 e2 e3) env =
     SBool True -> eval e2 env
     _ -> eval e3 env
 
--- TODO: Eval function for SFunc
-eval (SFunctionCall name args) env = do
-  
-
--- Add other cases for literals, operators, and conditionals as needed
-eval _ _ = error "Evaluation not implemented for this expression"
-
+eval (SFuncCall name args) env =
+  case lookup name env of
+    Just (SClosure closureEnv params body) ->
+      if length params == length args
+      then
+        let argValues = map (`eval` env) args
+            newEnv = addToEnvList params argValues closureEnv
+        in eval body newEnv
+      else
+        error $ "Function '" ++ name ++ "' expects " ++ show (length params) ++ " arguments but received " ++ show (length args)
+    _ -> error $ "Function '" ++ name ++ "' not found in environment"
+    
 liftBoolOp :: (Bool -> Bool -> Bool) -> SExp a -> SExp a -> Bool
 liftBoolOp f (SBool b1) (SBool b2) = f b1 b2
 liftBoolOp f _ _ = False
@@ -209,18 +220,13 @@ execStmt env (SeqStmt (st:sts)) = do
 execStmt env (Assign var val) = do
   let val' = eval val env
   return (Nothing, addToEnv var val' env)
-  
+
 execStmt env (IfStmt cond tr fl) = execIfStmt env cond tr fl
 
--- execStmt env (Return val) = do
---   let val' = eval val env
---   case val' of
---     SVal v -> return (Just $ show v, env)
---     _ -> return (Nothing, env)
 execStmt env (Return val) = do
   let val' = eval val env
   return (Just $ show val', env)
-  
+
 execStmt env (SPrint exp) =
   let val = eval exp env
   in return (Just $ show val, env)
@@ -231,7 +237,6 @@ execStmt env (SPrintln exp) =
 
 execStmt env (FuncDecl name args body) = return (Nothing, addToEnv name (SFunc name args body) env)
 
-
 execIfStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> SExp a -> Stmt a -> Stmt a -> IO (Maybe String, Env a)
 execIfStmt env condStmt thenStmt elseStmt = do
   let cond = eval condStmt env
@@ -239,4 +244,3 @@ execIfStmt env condStmt thenStmt elseStmt = do
     SBool True -> execStmt env thenStmt
     SBool False -> execStmt env elseStmt
     _ -> return (Nothing, env)
-    
