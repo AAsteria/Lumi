@@ -165,7 +165,7 @@ ifStmt = label "if statement" $ do
     return $ IfStmt cond thenBranch (Data.Maybe.fromMaybe (SeqStmt []) elseBranch)
 
 -- usage: parseTest stmt "fun myadd(a,b) {print a+b}"
-functionCall :: Parser (SExp a)
+functionCall :: Parser (AST.Stmt a)
 functionCall = do
     name <- identifier
     args <- parens (mmvp `sepBy` symbol ",")
@@ -205,7 +205,8 @@ parses input =
 -- parseTest stmt "if (3<5.5) {return True} else {return False}"
 
 singleStmt :: Parser (AST.Stmt a)
-singleStmt = assignStmt
+singleStmt = try functionCall
+    <|> assignStmt
     <|> ifStmt
     -- <|> procedureDeclStmt
     <|> functionDecl

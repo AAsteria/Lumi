@@ -22,7 +22,7 @@ data SExp a where
   SIf :: SExp a -> SExp a -> SExp a -> SExp a
   SWhile :: SExp a -> SExp a -> SExp a -> SExp a
   SFunc :: String -> [String] -> Stmt a -> SExp a
-  SFuncCall :: String -> [SExp a] -> SExp a --added
+   --added
   -- SProcedure :: String -> [String] -> Stmt a -> SExp a
   SList :: [SExp a] -> SExp a
   SVal :: a -> SExp a
@@ -38,6 +38,7 @@ data Stmt a where
   IfStmt :: SExp a -> Stmt a -> Stmt a -> Stmt a
   -- ProcDecl :: String -> [String] -> Stmt a -> Stmt a
   FuncDecl :: String -> [String] -> Stmt a -> Stmt a
+  SFuncCall :: String -> [SExp a] -> Stmt a
   CallStmt :: String -> [SExp a] -> Stmt a
   Return :: SExp a -> Stmt a
   deriving (Show, Eq)

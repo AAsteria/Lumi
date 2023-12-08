@@ -179,18 +179,6 @@ eval (SIf e1 e2 e3) env =
   in case v1 of
     SBool True -> eval e2 env
     _ -> eval e3 env
-
-eval (SFuncCall name args) env =
-  case lookup name env of
-    Just (SClosure closureEnv params body) ->
-      if length params == length args
-      then
-        let argValues = map (`eval` env) args
-            newEnv = addToEnvList params argValues closureEnv
-        in eval body newEnv
-      else
-        error $ "Function '" ++ name ++ "' expects " ++ show (length params) ++ " arguments but received " ++ show (length args)
-    _ -> error $ "Function '" ++ name ++ "' not found in environment"
     
 liftBoolOp :: (Bool -> Bool -> Bool) -> SExp a -> SExp a -> Bool
 liftBoolOp f (SBool b1) (SBool b2) = f b1 b2
@@ -236,6 +224,18 @@ execStmt env (SPrintln exp) =
   in return (Just $ show val ++ "\n", env)
 
 execStmt env (FuncDecl name args body) = return (Nothing, addToEnv name (SFunc name args body) env)
+
+execStmt env (SFuncCall name args) =
+  case lookup name env of
+    Just (SFunc name params body) ->
+      if length params == length args
+      then
+        let argValues = map (`eval` env) args
+            newEnv = addToEnvList params argValues env
+        in execStmt newEnv body
+      else
+        error $ "Function '" ++ name ++ "' expects " ++ show (length params) ++ " arguments but received " ++ show (length args)
+    _ -> error $ "Function '" ++ name ++ "' not found in environment"
 
 execIfStmt :: (Fractional a, Ord a, Show a, Floating a) => Env a -> SExp a -> Stmt a -> Stmt a -> IO (Maybe String, Env a)
 execIfStmt env condStmt thenStmt elseStmt = do
