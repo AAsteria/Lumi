@@ -205,14 +205,14 @@ parses input =
 -- parseTest stmt "if (3<5.5) {return True} else {return False}"
 
 singleStmt :: Parser (AST.Stmt a)
-singleStmt = try functionCall
-    <|> assignStmt
+singleStmt = assignStmt
     <|> ifStmt
     -- <|> procedureDeclStmt
     <|> functionDecl
     <|> returnStmt
     <|> parsePrintln
     <|> parsePrint
+    <|> try functionCall
     <|> try (seqStmt <* optional (symbol ";"))
 
 

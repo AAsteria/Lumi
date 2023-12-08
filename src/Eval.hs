@@ -230,8 +230,7 @@ execStmt env (SFuncCall name args) =
     Just (SFunc name params body) ->
       if length params == length args
       then
-        let argValues = map (`eval` env) args
-            newEnv = addToEnvList params argValues env
+        let newEnv = addToEnvList params args env
         in execStmt newEnv body
       else
         error $ "Function '" ++ name ++ "' expects " ++ show (length params) ++ " arguments but received " ++ show (length args)
